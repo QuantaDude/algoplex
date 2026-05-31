@@ -93,8 +93,8 @@ endif()
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build Raylib as static libraries" FORCE)
 # add_subdirectory(web)
 add_subdirectory(thirdparty/raylib-5.5)
-add_subdirectory(thirdparty/imgui-docking)
-add_subdirectory(thirdparty/rlImGui)
+#add_subdirectory(thirdparty/imgui-docking)
+#add_subdirectory(thirdparty/rlImGui)
 add_subdirectory(thirdparty/raygui)
 
 # -------------------------------
@@ -144,7 +144,8 @@ target_include_directories("${PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}
 #   target_include_directories("${PROJECT_NAME}" PUBLIC web/src)
 
 # endif()
-target_link_libraries("${PROJECT_NAME}" PRIVATE raylib_static imgui rlimgui raygui)
+# target_link_libraries("${PROJECT_NAME}" PRIVATE raylib_static imgui rlimgui raygui)
+target_link_libraries("${PROJECT_NAME}" PRIVATE raylib_static raygui)
 
 if(MSVC)
     target_compile_definitions("${PROJECT_NAME}" PUBLIC _CRT_SECURE_NO_WARNINGS)
