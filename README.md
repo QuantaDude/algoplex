@@ -4,12 +4,14 @@
 
 ## What is it?
 
-Algo Visualizer is a web app which aims to teach data structures and algorithms in an intuitive and easy to understand manner. It is built using C++, WASM and raylib.
+Algo Visualizer is a web app which aims to teach data structures and algorithms in an intuitive and easy to understand manner. It is built using C++, WASM, Raylib, React and TypeScript.
+
+This project combines the high performance C++, WASM code for rendering, and TypeScript and React for the rapid and ease of development of User Interface. Combining the best of both worlds. 
 
 ## Algorithms
 
-- [x] BFS
-- [ ] DFS
+- [x] DFS
+- [ ] BFS
 - [ ] TSP algorithms
 - [ ] More in the future.
 

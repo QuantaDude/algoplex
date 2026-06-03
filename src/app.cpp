@@ -6,7 +6,7 @@
 #include "utils.h"
 #include <string>
 #if defined(PLATFORM_WEB)
-#include "web.h"
+#include "web.hpp"
 #include <emscripten.h>
 #include <emscripten/emscripten.h>
 #include <emscripten/html5.h>
@@ -38,8 +38,8 @@ App *App::createInstance(int width, int height) {
           std::make_unique<AV::Scene>(&instance->getDefaultFont()));
       instance->current_state->init();
 #if defined(PLATFORM_WEB)
-      toggle_console_wrapper();
-      set_canvas_size_wrapper(&width, &height);
+      toggle_console();
+      canvas_set_size(&width, &height);
       emscripten_get_canvas_element_size("#canvas", &width, &height);
 #endif
     }

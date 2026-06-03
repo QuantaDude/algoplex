@@ -29,24 +29,26 @@ if(EMSCRIPTEN)
     )
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
+        -s USE_PTHREADS=0 \
+        -pthread")
+
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
+        -s ALLOW_MEMORY_GROWTH=1 \
         -s USE_GLFW=3 \
         -s ASYNCIFY \
         -s WASM=1 \
-        -s USE_PTHREADS=0 \
-        -pthread \
-        -s ALLOW_MEMORY_GROWTH=1")
-
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
+        -s MODULARIZE=1 \
+        -s EXPORT_ES6=1 \
+        -s EXPORT_NAME='AlgoVisualizer' \
         -s EXIT_RUNTIME=0 \
         -s ASSERTIONS=0 \
-        --shell-file ${CMAKE_SOURCE_DIR}/src/shell.html \
-        --preload-file ${CMAKE_SOURCE_DIR}/resources@/resources
-        --use-preload-plugins")
+        --export-dynamic \
+        -s EXPORTED_FUNCTIONS='[\"_main\",  \"_toggle_console_wrapper\"]' \
+        -s EXPORTED_RUNTIME_METHODS='[\"ccall\", \"cwrap\"]' \
+        --preload-file ${CMAKE_SOURCE_DIR}/resources@/resources \
+        --use-preload-plugins")    
 
-      # -s EXPORTED_FUNCTIONS='[\"_main\", \"_canvas_set_size\", \"_toggle_console\", \"_print_float\", \"_print\"]' \
-      # -s EXPORTED_RUNTIME_METHODS='[\"ccall\", \"cwrap\"]'")    
-
-        set(CMAKE_EXECUTABLE_SUFFIX ".html")
+    # set(CMAKE_EXECUTABLE_SUFFIX ".html")
 
     execute_process(COMMAND em++ --cflags OUTPUT_VARIABLE EM_CFLAGS)
     string(STRIP "${EM_CFLAGS}" EM_CFLAGS)
@@ -77,7 +79,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     if(EMSCRIPTEN)
       #add_compile_options(-mavx2 -msimd128)
         if(CMAKE_BUILD_TYPE STREQUAL "Release")
-            add_compile_options(-O3 -flto -ftree-vectorize)
+            add_compile_options(-O3 -fno-lto -ftree-vectorize)
         endif()
     else()
         add_compile_options(-mavx2)
@@ -111,7 +113,7 @@ add_executable("${PROJECT_NAME}" ${MY_SOURCES})
 set_property(TARGET "${PROJECT_NAME}" PROPERTY CXX_STANDARD 20)
 
 if(EMSCRIPTEN)
-    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html" COMPILE_FLAGS "${EM_CFLAGS}")
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".js" COMPILE_FLAGS "${EM_CFLAGS}")
 endif()
 
 # -------------------------------

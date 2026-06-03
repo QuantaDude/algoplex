@@ -5,7 +5,7 @@
 #include "state.hpp"
 #include <memory>
 #if defined(PLATFORM_WEB)
-#include "web.h"
+#include "web.hpp"
 #endif
 
 class App {

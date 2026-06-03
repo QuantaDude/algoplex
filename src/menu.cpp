@@ -4,7 +4,7 @@
 #include "raylib.h"
 #include "scene.hpp"
 #include "state.hpp"
-#include "web.h"
+#include "web.hpp"
 #include <cstring>
 #include <memory>
 #include <sys/types.h>
@@ -25,7 +25,7 @@ void Menu::init() {
   initCells(cells);
 // GuiSetState(STATE_FOCUSED);
 #if defined(PLATFORM_WEB)
-  toggle_console_wrapper();
+  toggle_console();
 
 #endif
 }
@@ -88,7 +88,7 @@ void Menu::update() {
 void Menu::input() {
 #if defined(PLATFORM_WEB)
   if (IsKeyPressed(KEY_C)) {
-    toggle_console_wrapper();
+    toggle_console();
   }
 #endif
 }

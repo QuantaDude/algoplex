@@ -57,7 +57,7 @@ class Scene : public State {
   // void GuiAlgoViz(BaseGuiState *state);
 
   static void Button006();
-  static void Button008();
+  static void StopButton(Scene *);
   static void StartButton(Scene *);
   static void StepButton(Scene *);
   static void Button015();

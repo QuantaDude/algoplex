@@ -1,6 +1,6 @@
 
-#include "web.h"
 #include "utils.h"
+#include "web.hpp"
 #include <emscripten.h> // Required for EM_JS macros
 #include <emscripten/console.h>
 #include <emscripten/em_js.h>
@@ -10,6 +10,8 @@
 #include <emscripten/html5.h>
 #include <stdlib.h>
 // Toggle console visibility
+
+extern "C" {
 EM_JS(void, toggle_console, (void), {
   var output = document.getElementById("output");
   output.hidden = !output.hidden;
@@ -33,13 +35,14 @@ void close_window_wrapper() { close_window(); }
 EM_JS(void, print_float, (float val), { Module.print(val); });
 
 // Print a UTF-8 string
-EM_JS(void, print, (const char *str), { Module.print(UTF8ToString(str)); });
+EM_JS(void, print_string, (const char *str),
+      { Module.print(UTF8ToString(str)); });
 
 void set_canvas_size_wrapper(int *width, int *height) {
   canvas_set_size(width, height);
 }
 
-void print_console(const char *str) { print(str); };
+void print_console(const char *str) { print_string(str); };
 void print_console_float(float val) { print_float(val); };
 em_str_callback_func onPreloadSuccess(const char *filename) {
   TRACELOG(LOG_INFO, "File loaded:", filename);
@@ -70,18 +73,22 @@ EM_JS(char *, list_all_files, (const char *dir), {
           output += '[DIR]  ' + path + '\n';
           traverse(path); // Recursive call for subdirectories
         }
+      } catch (e) {
+        output += '[ERROR] ' + path + ': ' + e.message + '\n';
       }
-      catch(e) { output += '[ERROR] ' + path + ': ' + e.message + '\n'; }
     }
   }
 
-  try { traverse(currentDir); }
-  catch(e) { output = 'Error reading directory: ' + e.message; }
+  try {
+    traverse(currentDir);
+  } catch (e) {
+    output = 'Error reading directory: ' + e.message;
+  }
 
   // Return the string allocated on the Emscripten heap
   return stringToNewUTF8(output);
 });
-
+}
 void list_files() {
   char *fileList = list_all_files("/");
   if (fileList) {

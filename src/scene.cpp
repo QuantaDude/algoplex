@@ -1,12 +1,9 @@
-#include "scene.hpp"
 #include "app.hpp"
 #include "raygui.h"
 #include "raylib.h"
 #include "raymath.h"
+#include "scene.hpp"
 #include "state.hpp"
-#include "utils.h"
-#include "web.h"
-#include <string>
 
 #if defined(PLATFORM_WEB)
 #include <emscripten/html5.h>
@@ -165,8 +162,8 @@ void AV::Scene::drawUI(IVector2 resolution) {
     if (GuiButton(scene_gui_state.layoutRecs[10], "Step"))
       StepButton(this);
 
-    if (GuiButton(scene_gui_state.layoutRecs[8], "Delete"))
-      Button008();
+    if (GuiButton(scene_gui_state.layoutRecs[8], "Stop"))
+      StopButton(this);
 
     if (GuiDropdownBox(scene_gui_state.layoutRecs[7],
                        "Adjacency Matrix;Adjacency List;",
@@ -689,7 +686,7 @@ void AV::Scene::update() {
   }
 }
 void AV::Scene::Button006() {}
-void AV::Scene::Button008() {}
+void AV::Scene::StopButton(AV::Scene *scene) {}
 void AV::Scene::StartButton(AV::Scene *scene) {
   while (!scene->dfs_stack.empty())
     scene->dfs_stack.pop();
@@ -702,6 +699,8 @@ void AV::Scene::StartButton(AV::Scene *scene) {
 
   // step through the root node
   if (!scene->nodes.empty()) {
+    scene->algorithm_state = AV::Running;
+
     scene->traverse();
   }
 }

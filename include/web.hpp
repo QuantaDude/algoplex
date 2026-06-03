@@ -4,15 +4,17 @@
 // extern "C" {
 //}
 #if defined(PLATFORM_WEB)
+#include <emscripten.h>
 #include <emscripten/em_types.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
-void toggle_console(void);
-void canvas_set_size(int *width, int *height);
+void toggle_console(void) __attribute__((used))
+__attribute__((visibility("default")));
+void EMSCRIPTEN_KEEPALIVE canvas_set_size(int *width, int *height);
 void close_window(void);
 void print_float(float string);
-void print(const char *);
+void print_string(const char *);
 char *list_all_files(const char *);
 
 void toggle_console_wrapper(void);
