@@ -36,11 +36,11 @@ App *App::createInstance(int width, int height) {
       instance = new App(width, height, RESOURCES_PATH "font/alpha_beta.png");
       instance->setState(
           std::make_unique<AV::Scene>(&instance->getDefaultFont()));
-      instance->current_state->init();
+      // instance->current_state->init();
 #if defined(PLATFORM_WEB)
       toggle_console();
-      canvas_set_size(&width, &height);
-      emscripten_get_canvas_element_size("#canvas", &width, &height);
+      // canvas_set_size(&width, &height);
+      // emscripten_get_canvas_element_size("#canvas", &width, &height);
 #endif
     }
   }
@@ -104,10 +104,11 @@ void App::runWrapper() { getInstance().run(); }
 #if defined(PLATFORM_WEB)
 void App::initWeb() {
   emscripten_get_canvas_element_size("#canvas", &resolution.x, &resolution.y);
-  // current_state->init();
+  current_state->init();
   GuiSetFont(g_font);
-  // std::string str = std::to_string(g_font.texture.id);
-  // print_console(str.c_str());
+// AV::scene_ptr c> (AV::Scene *)current_state.get();
+// std::string str = std::to_string((int)&resolution);
+// print_console(str.c_str());
   emscripten_set_main_loop(runWrapper, 60, 1);
 }
 #endif

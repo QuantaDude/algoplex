@@ -17,18 +17,25 @@ EM_JS(void, toggle_console, (void), {
   output.hidden = !output.hidden;
 });
 
-// Set canvas size to full window and return area
-EM_JS(void, canvas_set_size, (int *width, int *height), {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const canvas = document.getElementById("canvas");
-  canvas.width = w;
-  canvas.height = h;
+EM_JS(void, set_mode,(int major, int minor),{
+window.setMode(major, minor);
 
-  // Write values to the passed pointers (assuming 32-bit integers)
-  HEAP32[width >> 2] = w;
-  HEAP32[height >> 2] = h;
-});
+      });
+
+
+// Set canvas size to full window and return area
+EM_JS(void, canvas_set_size, (int *width, int *height),
+      {
+          // const w = window.innerWidth;
+          // consc> h = window.innerHeight;
+          // const canvas = document.getElementById("canvas");
+          // canvas.width = w;
+          // canvas.height = h;
+          //
+          // // Write values to the passed pointers (assuming 32-bit integers)
+          // HEAP32[width >> 2] = w;
+          // HEAP32[height >> 2] = h;
+      });
 EM_JS(void, close_window, (void), { window.close(); });
 void close_window_wrapper() { close_window(); }
 // Print a float value

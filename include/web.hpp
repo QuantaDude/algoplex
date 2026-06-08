@@ -15,6 +15,9 @@ void EMSCRIPTEN_KEEPALIVE canvas_set_size(int *width, int *height);
 void close_window(void);
 void print_float(float string);
 void print_string(const char *);
+
+void set_mode(int, int);
+
 char *list_all_files(const char *);
 
 void toggle_console_wrapper(void);

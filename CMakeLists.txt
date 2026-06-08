@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 4.0)
 project(algo-visualizer)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 # Always generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -43,10 +43,11 @@ if(EMSCRIPTEN)
         -s EXIT_RUNTIME=0 \
         -s ASSERTIONS=0 \
         --export-dynamic \
-        -s EXPORTED_FUNCTIONS='[\"_main\",  \"_toggle_console_wrapper\"]' \
+        -s EXPORTED_FUNCTIONS='[\"_main\",  \"_toggle_console_wrapper\", \"_get_scene_ptr\", \"_update_mode\", \"_step_algo\", \"_start_algo\"]' \
         -s EXPORTED_RUNTIME_METHODS='[\"ccall\", \"cwrap\"]' \
         --preload-file ${CMAKE_SOURCE_DIR}/resources@/resources \
-        --use-preload-plugins")    
+        --use-preload-plugins \
+        --emit-tsd ${CMAKE_BINARY_DIR}/wasmmodule.d.ts")    
 
     # set(CMAKE_EXECUTABLE_SUFFIX ".html")
 
@@ -113,14 +114,28 @@ add_executable("${PROJECT_NAME}" ${MY_SOURCES})
 set_property(TARGET "${PROJECT_NAME}" PROPERTY CXX_STANDARD 20)
 
 if(EMSCRIPTEN)
-    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".js" COMPILE_FLAGS "${EM_CFLAGS}")
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".js" COMPILE_FLAGS "${EM_CFLAGS}" RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/src/wasm")
+
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/src/wasm/${PROJECT_NAME}.wasm"
+        "${CMAKE_SOURCE_DIR}/public/wasm/${PROJECT_NAME}.wasm"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/src/wasm/${PROJECT_NAME}.data"
+        "${CMAKE_SOURCE_DIR}/public/wasm/${PROJECT_NAME}.data"
+
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+  "${CMAKE_BINARY_DIR}/wasmmodule.d.ts"
+        "${CMAKE_SOURCE_DIR}/src/types/wasmmodule.d.ts"
+)
 endif()
 
 # -------------------------------
 # DEFINES
 # -------------------------------
 if(EMSCRIPTEN)
-  target_compile_definitions("${PROJECT_NAME}" PUBLIC RESOURCES_PATH="/resources/")
+  target_compile_definitions("${PROJECT_NAME}" PUBLIC PLATFORM_WEB=1 RESOURCES_PATH="/resources/")
 else()
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         target_compile_definitions("${PROJECT_NAME}" PUBLIC

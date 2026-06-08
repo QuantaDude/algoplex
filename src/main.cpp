@@ -9,7 +9,7 @@ int main() {
   int width{1920}, height{1080};
 
 #if defined(PLATFORM_WEB)
-  set_canvas_size_wrapper(&width, &height);
+  // set_canvas_size_wrapper(&width, &height);
   emscripten_get_canvas_element_size("#canvas", &width, &height);
 #endif
 

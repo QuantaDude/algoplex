@@ -4,8 +4,17 @@
 #include <cstdint>
 #include <stack>
 #include <vector>
-namespace AV {
 
+#import <emscripten.h>
+#import <emscripten/em_types.h>
+
+#include <emscripten/em_macros.h>
+
+typedef struct {
+  float m[16];
+} Mat4;
+
+namespace AV {
 typedef struct {
   // Define anchors
   Vector2 main_window_anchor; // ANCHOR ID:1
@@ -40,6 +49,8 @@ typedef struct {
 } BaseGuiState;
 
 class Scene : public State {
+
+public:
   enum class DFSPhase { ENTER, EXIT };
 
   struct DFSFrame {
@@ -71,6 +82,7 @@ class Scene : public State {
 
     EdgeCreate = 5,
     EdgeEdit = 6,
+    EdgeNONSENSE = 7
   } m_input_mode;
   int main_mode = 0; // 0=FREE, 1=NODE, 2=EDGE
   int sub_mode = 0;  // 0=SELECT, 1=CREATE, 2=EDIT
@@ -101,7 +113,6 @@ class Scene : public State {
   size_t hoveredEdgeIdx = SIZE_MAX;
   size_t hoveredNodeIdx = SIZE_MAX;
 
-public:
   Scene(Font *);
   void init() override;
   void input() override;
@@ -124,4 +135,12 @@ public:
   void traverse();
 };
 
+extern AV::Scene *scene_ptr;
 }; // namespace AV
+
+extern "C" {
+AV::Scene *EMSCRIPTEN_KEEPALIVE get_scene_ptr();
+void EMSCRIPTEN_KEEPALIVE update_mode(AV::Scene *, int, int);
+void start_algo(AV::Scene *);
+void step_algo(AV::Scene *);
+}

@@ -2,31 +2,115 @@
 #include "raygui.h"
 #include "raylib.h"
 #include "raymath.h"
+#include "rlgl.h"
 #include "scene.hpp"
 #include "state.hpp"
-
+#include "web.hpp"
 #if defined(PLATFORM_WEB)
 #include <emscripten/html5.h>
 
 #endif
 
+Mat4 Mat4Identity(void) {
+  Mat4 m = {0};
+
+  m.m[0] = 1.0f;
+  m.m[5] = 1.0f;
+  m.m[10] = 1.0f;
+  m.m[15] = 1.0f;
+
+  return m;
+}
+Mat4 Mat4Translate(float x, float y, float z) {
+  Mat4 m = Mat4Identity();
+
+  m.m[12] = x;
+  m.m[13] = y;
+  m.m[14] = z;
+
+  return m;
+}
+
+Mat4 Mat4RotateX(float radians) {
+  Mat4 m = Mat4Identity();
+
+  float c = cosf(radians);
+  float s = sinf(radians);
+
+  m.m[5] = c;
+  m.m[6] = s;
+  m.m[9] = -s;
+  m.m[10] = c;
+
+  return m;
+}
+Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
+  Mat4 r = {0};
+
+  for (int row = 0; row < 4; row++) {
+    for (int col = 0; col < 4; col++) {
+      for (int k = 0; k < 4; k++) {
+        r.m[col + row * 4] += a.m[k + row * 4] * b.m[col + k * 4];
+      }
+    }
+  }
+
+  return r;
+}
+
+void start_algo(AV::Scene *scene) {
+  while (!scene->dfs_stack.empty())
+    scene->dfs_stack.pop();
+
+  scene->visited.assign(scene->nodes.size(), false);
+
+  if (!scene->nodes.empty()) {
+    scene->dfs_stack.push({0, AV::Scene::DFSPhase::ENTER}); // root
+  }
+
+  // step through the root node
+  if (!scene->nodes.empty()) {
+    scene->algorithm_state = AV::Running;
+
+    scene->traverse();
+  }
+}
+void step_algo(AV::Scene *scene) { scene->traverse(); }
+
+void update_mode(AV::Scene *ptr, int main, int sub) {
+
+  ptr->main_mode = main;
+  ptr->sub_mode = sub;
+
+  std::string str = std::to_string((int)ptr);
+  print_console(str.c_str());
+}
+
+AV::Scene *get_scene_ptr() { return AV::scene_ptr; }
+
 AV::Scene::Scene(Font *font)
+
     : scene_gui_state(InitBaseGui()), g_camera({0}),
       m_input_mode(InteractionMode::None), m_font(font),
       algorithm_state(AV::Idle) {}
 
+namespace AV {
+Scene *scene_ptr = nullptr;
+}
 void AV::Scene::init() {
 
+  AV::scene_ptr = this;
   GuiSetFont(*m_font);
   GuiSetStyle(DEFAULT, TEXT_SIZE, 25);
   lastKey = "";
 
   IVector2 *resolution = App::getInstance().getResolution();
-
   Node newNode;
   newNode.radius = 15;
 
-  newNode.pos = {(float)(resolution->x / 2), (float)(resolution->y / 2)};
+  newNode.pos = {g_camera.target.x + (float)(resolution->x / 2),
+                 g_camera.target.y + (float)(resolution->y / 2)};
+  // newNode.pos = {(float)(resolution->x / 2), (float)(resolution->y / 2)};
   newNode.collider = {newNode.pos.x - newNode.radius,
                       newNode.pos.y - newNode.radius, (float)newNode.radius * 2,
                       (float)newNode.radius * 2};
@@ -50,6 +134,12 @@ void AV::Scene::draw(IVector2 *resolution) {
   ClearBackground({41, 41, 41, 100});
 
   BeginMode2D(g_camera);
+  rlPushMatrix();
+  rlTranslatef(0, 50 * 50, 0);
+  rlRotatef(90, 1, 0, 0);
+  DrawGrid(1000, 50);
+  rlPopMatrix();
+
   for (size_t i = 0; i < edges.size(); i++) {
     Color col = (i == hoveredEdgeIdx) ? RED : DARKGRAY;
     DrawLineEx(nodes[edges[i].from].pos, nodes[edges[i].to].pos, 3, col);
@@ -79,9 +169,10 @@ void AV::Scene::draw(IVector2 *resolution) {
   }
 
   EndMode2D();
-  AV::Scene::drawUI(*resolution);
+  // AV::Scene::drawUI(*resolution);
 
   EndDrawing();
+  update_input_mode();
 }
 
 void AV::Scene::drawUI(IVector2 resolution) {
@@ -152,8 +243,6 @@ void AV::Scene::drawUI(IVector2 resolution) {
     if (main_mode == 1 || main_mode == 2)
       GuiToggleGroup(scene_gui_state.layoutRecs[16], "SELECT;CREATE;EDIT",
                      &sub_mode);
-
-    update_input_mode();
 
     // ---- Buttons ----
     if (GuiButton(scene_gui_state.layoutRecs[9], "Start"))
@@ -313,6 +402,60 @@ void AV::Scene::input() {
     return;
   }
   switch (m_input_mode) {
+
+  case InteractionMode::NodeCreate:
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+      bool clickedOnNode = false;
+
+      for (size_t i = 0; i < nodes.size(); i++) {
+        if (CheckCollisionPointRec(mouse_world_pos, nodes[i].collider)) {
+
+          clickedOnNode = true;
+
+          if (selected_node == nodes.end()) {
+            // selectedNode = &nodes[i];
+            selected_node = nodes.begin() + i;
+            // nodes[i].oldPos = nodes[i].pos;
+            selected_node->oldPos = selected_node->pos;
+            break;
+          } else if (selected_node != nodes.begin() + i) {
+            break;
+
+          } else if (selected_node == nodes.begin() + i) {
+            // Deselect if clicking on the same node
+            clickedOnNode = false;
+            // selectedNode = nullptr;
+          }
+        }
+      }
+
+      // Deselect if clicking on empty space
+      if (!clickedOnNode && selected_node != nodes.end()) {
+        //        selectedNode = nullptr;
+        selected_node = nodes.end();
+        break;
+      }
+
+      // create new node
+      if (selected_node == nodes.end() && selected_edge_origin == nodes.end()) {
+        Node newNode;
+        Vector2 mouseWorld = GetScreenToWorld2D(GetMousePosition(), g_camera);
+        newNode.pos = mouseWorld;
+        newNode.oldPos = mouseWorld;
+        newNode.radius = 15;
+        newNode.collider = {
+            newNode.pos.x - newNode.radius, newNode.pos.y - newNode.radius,
+            (float)newNode.radius * 2, (float)newNode.radius * 2};
+        newNode.data = nodes.size();
+
+        nodes.push_back(newNode);
+        root = &nodes[0];
+        // selectedNode = &nodes.back();
+        selected_node = nodes.end() - 1;
+        selected_edge_origin = nodes.end();
+      }
+    }
+    break;
   case InteractionMode::NodeSelect:
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -484,6 +627,30 @@ void AV::Scene::input() {
 
     break;
 
+  case InteractionMode::EdgeSelect:
+    for (size_t i = 0; i < edges.size(); i++) {
+      if (IsMouseHoveringEdge(mouse_world_pos, nodes[edges[i].from].pos,
+                              nodes[edges[i].to].pos)) {
+        hoveredEdgeIdx = i;
+        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) &&
+            selected_edge_origin == nodes.end()) {
+          m_input_mode = InteractionMode::EdgeEdit;
+          main_mode = 2;
+          sub_mode = 2;
+
+          set_mode(main_mode, sub_mode);
+          selected_edge_origin = nodes.begin() + (edges.begin() + i)->from;
+          // selectedNodeOrigin = &nodes[edges[i].from];
+          std::vector<Edge>::iterator it = edges.begin();
+          it += i;
+          edges.erase(it);
+          hoveredEdgeIdx = SIZE_MAX;
+        }
+
+        return;
+      }
+    }
+    break;
   case InteractionMode::None:
   default:
     // Camera panning, idle state
@@ -499,6 +666,7 @@ void AV::Scene::input() {
           main_mode = 1;
           sub_mode = 0;
 
+          set_mode(main_mode, sub_mode);
           return;
         }
       }
@@ -511,6 +679,7 @@ void AV::Scene::input() {
           main_mode = 2;
           sub_mode = 1;
 
+          set_mode(main_mode, sub_mode);
           // selectedNodeOrigin = &nodes[i];
           selected_edge_origin = nodes.begin() + i;
           return;
@@ -527,6 +696,7 @@ void AV::Scene::input() {
           main_mode = 2;
           sub_mode = 2;
 
+          set_mode(main_mode, sub_mode);
           selected_edge_origin = nodes.begin() + (edges.begin() + i)->from;
           // selectedNodeOrigin = &nodes[edges[i].from];
           std::vector<Edge>::iterator it = edges.begin();
@@ -568,6 +738,7 @@ void AV::Scene::input() {
     main_mode = 0;
     sub_mode = 0;
 
+    set_mode(main_mode, sub_mode);
     if (selected_node != nodes.end()) {
       selected_node->pos = selected_node->oldPos;
       selected_node->collider = {selected_node->pos.x - selected_node->radius,
@@ -582,9 +753,10 @@ void AV::Scene::input() {
   }
   if (algorithm_state == AV::Idle) {
     if (IsKeyPressed(KEY_A)) {
-      m_input_mode = InteractionMode::NodeSelect;
+      m_input_mode = InteractionMode::NodeCreate;
       main_mode = 1;
-      sub_mode = 0;
+      sub_mode = 1;
+      set_mode(main_mode, sub_mode);
       if (selected_node == nodes.end() && selected_edge_origin == nodes.end()) {
         Node newNode;
         Vector2 mouseWorld = GetScreenToWorld2D(GetMousePosition(), g_camera);
@@ -611,35 +783,53 @@ void AV::Scene::input() {
 
         main_mode = 1;
         sub_mode = 0;
+
+        set_mode(main_mode, sub_mode);
+
       } else if (IsKeyReleased(KEY_E)) {
         if (main_mode == 0) {
           m_input_mode = InteractionMode::EdgeSelect;
 
           main_mode = 2;
           sub_mode = 0;
+          set_mode(main_mode, sub_mode);
         } else if (main_mode == 1) {
           sub_mode = 2;
           m_input_mode = InteractionMode::NodeEdit;
+
+          set_mode(main_mode, sub_mode);
         } else if (main_mode == 2) {
           sub_mode = 2;
           m_input_mode = InteractionMode::EdgeEdit;
+
+          set_mode(main_mode, sub_mode);
         }
       }
       if (IsKeyPressed(KEY_S)) {
         sub_mode = 0;
 
+        set_mode(main_mode, sub_mode);
         if (main_mode == 1) {
           m_input_mode = InteractionMode::NodeSelect;
+
+          set_mode(main_mode, sub_mode);
         } else if (main_mode == 2) {
           m_input_mode = InteractionMode::EdgeSelect;
+
+          set_mode(main_mode, sub_mode);
         }
       }
       if (IsKeyPressed(KEY_C)) {
         sub_mode = 1;
+        set_mode(main_mode, sub_mode);
         if (main_mode == 1) {
           m_input_mode = InteractionMode::NodeCreate;
+
+          set_mode(main_mode, sub_mode);
         } else if (main_mode == 2) {
           m_input_mode = InteractionMode::EdgeCreate;
+
+          set_mode(main_mode, sub_mode);
         }
       }
     }
