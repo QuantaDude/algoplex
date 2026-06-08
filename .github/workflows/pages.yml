@@ -53,15 +53,26 @@ jobs:
           cmake --build build_wasm -j$(nproc)
 
 
-      - name: Prepare Pages files
-        run: |
-          mkdir -p dist
-          cp build_wasm/*.html dist/
-          cp build_wasm/*.js dist/
-          cp build_wasm/*.wasm dist/
-          cp build_wasm/*.data dist/
-          mv dist/algo-visualizer.html dist/index.html
+    # c> name: Prepare Pages files
+    #   run: |
+    #     mkdir -p dist
+    #     cp build_wasm/*.html dist/
+    #     cp build_wasm/*.js dist/
+    #     cp build_wasm/*.wasm dist/
+    #     cp build_wasm/*.data dist/
+    #     mv dist/algo-visualizer.html dist/index.html
+    
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
 
+      - name: Install npm packages
+        run: npm ci
+
+      - name: Build React app
+        run: npm run build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

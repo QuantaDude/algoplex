@@ -44,11 +44,12 @@ function App() {
       // Raylib loads images itself from the VFS — it doesn't need them pre-decoded
       // noImageDecodingc> true,
       // noAudioDecoding: true,
-      locateFile: (path: string) => `/wasm/${path}`,
+      locateFile: (path: string) => `${import.meta.env.BASE_URL}wasm/${path}`,
     }).then((module: MainModule) => {
       moduleRef.current = module;
 
-    const navbar = Navbar({wasmModule: moduleRef!});
+      const navbar = Navbar({ wasmModule: moduleRef! });
+
       // window.saveFileFromMEMFSToDisc> = (
       //   memoryFSname: string,
       //   localFSname: string,
