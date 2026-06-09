@@ -26,6 +26,8 @@ set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/thirdparty")
 set(BUILD_SHARED_LIBS     OFF CACHE BOOL "" FORCE)
 set(BUILD_EXAMPLES        OFF CACHE BOOL "" FORCE)
 set(BUILD_GAMES           OFF CACHE BOOL "" FORCE)
+set(PLATFORM              "Web" CACHE STRING "" FORCE)
+set(OPENGL_VERSION        "ES 3.0" CACHE STRING "" FORCE)
 
 FetchContent_Declare(raylib
     GIT_REPOSITORY https://github.com/raysan5/raylib.git
