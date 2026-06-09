@@ -1,4 +1,7 @@
 
+#ifdef PLATFORM_WEB
+
+
 #include "utils.h"
 #include "web.hpp"
 #include <emscripten.h> // Required for EM_JS macros
@@ -17,11 +20,9 @@ EM_JS(void, toggle_console, (void), {
   output.hidden = !output.hidden;
 });
 
-EM_JS(void, set_mode,(int major, int minor),{
-window.setMode(major, minor);
-
-      });
-
+EM_JS(void, set_mode, (int major, int minor), {
+  window.setMode(major, minor);
+});
 
 // Set canvas size to full window and return area
 EM_JS(void, canvas_set_size, (int *width, int *height),
@@ -107,3 +108,5 @@ void list_files() {
 }
 
 void toggle_console_wrapper() { toggle_console(); }
+#endif // PLATFORM_WEB
+

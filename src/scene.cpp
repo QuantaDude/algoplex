@@ -12,6 +12,11 @@
 
 #endif
 
+#ifndef PLATFORM_WEB
+
+void set_mode(int a, int b) {}
+#endif // !PLATFORM_WEB
+
 Mat4 Mat4Identity(void) {
   Mat4 m = {0};
 
@@ -82,12 +87,16 @@ void update_mode(AV::Scene *ptr, int main, int sub) {
 
   ptr->main_mode = main;
   ptr->sub_mode = sub;
-
-  std::string str = std::to_string((int)ptr);
-  print_console(str.c_str());
 }
 
 AV::Scene *get_scene_ptr() { return AV::scene_ptr; }
+
+void on_resize(void) {
+  int x, y;
+
+  emscripten_get_canvas_element_size("#canvas", &x, &y);
+  SetWindowSize(x, y);
+}
 
 AV::Scene::Scene(Font *font)
 
@@ -119,10 +128,15 @@ void AV::Scene::init() {
   selected_edge_origin = nodes.end();
   root = &nodes[0];
   g_camera.zoom = 1.0f;
+
+  SetWindowSize(resolution->x, resolution->y);
+  // SetMouseScale(resolution->x / 300.0f, resolution->y / 150.0f);
 }
 void AV::Scene::draw(IVector2 *resolution) {
 #if defined(PLATFORM_WEB)
   emscripten_get_canvas_element_size("#canvas", &resolution->x, &resolution->y);
+
+  SetWindowSize(resolution->x, resolution->y);
 #elif defined(PLATFORM_DESKTOP)
   resolution->x = GetScreenWidth();
   resolution->y = GetScreenHeight();
@@ -218,21 +232,24 @@ void AV::Scene::drawUI(IVector2 resolution) {
     snprintf(keybindStr, sizeof(keybindStr),
              "A - Create new node.\n\nN - Node Select Mode.\n\nE - "
              "Edge Edit"
-             "Mode.\n\nC -Edge Create Mode.\n\nRMB- Create & Connect Edge.\n\nEsc - Free Mode.");
+             "Mode.\n\nC -Edge Create Mode.\n\nRMB- Create & Connect "
+             "Edge.\n\nEsc - Free Mode.");
     break;
   case InteractionMode::EdgeSelect:
     snprintf(modeStr, std::size(modeStr), "Edge Select Mode");
     snprintf(keybindStr, sizeof(keybindStr),
              "A - Create new node.\n\nN - Node Select Mode.\n\nE - "
              "Edge Edit "
-             "Mode.\n\nC - Edge Create Mode.\n\nRMB - Select Edge.\n\nEsc - Free Mode.");
+             "Mode.\n\nC - Edge Create Mode.\n\nRMB - Select Edge.\n\nEsc - "
+             "Free Mode.");
     break;
   case InteractionMode::EdgeEdit:
     snprintf(modeStr, std::size(modeStr), "Edge Edit Mode");
     snprintf(keybindStr, sizeof(keybindStr),
              "A - Create new node.\n\nN - Node Select Mode.\n\nS - "
              "Edge Select "
-             "Mode.\n\nC - Edge Create Mode.\n\nRMB - Select Edge.\n\nEsc - Free Mode.");
+             "Mode.\n\nC - Edge Create Mode.\n\nRMB - Select Edge.\n\nEsc - "
+             "Free Mode.");
     break;
 
   default:

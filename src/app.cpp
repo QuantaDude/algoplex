@@ -26,6 +26,11 @@ App *App::createInstance(int width, int height) {
     // list_files();
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+
+    emscripten_get_canvas_element_size("#canvas", &width, &height);
+
+  std::string str = std::to_string((int)width);
+  print_console(str.c_str());
     InitWindow(width, height, "Algorithm Visualizer");
     SetExitKey(KEY_NULL);
     if (IsWindowReady()) {

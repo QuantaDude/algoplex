@@ -48,7 +48,6 @@ function App() {
     }).then((module: MainModule) => {
       moduleRef.current = module;
 
-      const navbar = Navbar({ wasmModule: moduleRef! });
 
       // window.saveFileFromMEMFSToDisc> = (
       //   memoryFSname: string,

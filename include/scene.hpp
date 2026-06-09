@@ -5,10 +5,13 @@
 #include <stack>
 #include <vector>
 
+#ifdef PLATOFRM_WEB
+
 #import <emscripten.h>
 #import <emscripten/em_types.h>
 
 #include <emscripten/em_macros.h>
+#endif // PLATOFRM_WEB
 
 typedef struct {
   float m[16];
@@ -97,9 +100,13 @@ public:
 extern AV::Scene *scene_ptr;
 }; // namespace AV
 
+#ifdef PLATFORM_WEB
+
 extern "C" {
 AV::Scene *EMSCRIPTEN_KEEPALIVE get_scene_ptr();
 void EMSCRIPTEN_KEEPALIVE update_mode(AV::Scene *, int, int);
+void EMSCRIPTEN_KEEPALIVE on_resize();
 void start_algo(AV::Scene *);
 void step_algo(AV::Scene *);
 }
+#endif // PLATFORM_WEB

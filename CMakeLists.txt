@@ -1,25 +1,42 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.21)
 project(algo-visualizer)
 set(CMAKE_CXX_STANDARD 23)
-# Always generate compile_commands.json
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# --------------------------------
-# Keep compile_commands.json symlinked to project root
-# --------------------------------
-if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR) # skip in in-source builds
+# -------------------------------------------------------
+# Symlink compile_commands.json → project root
+# -------------------------------------------------------
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     add_custom_target(link_compile_commands ALL
         COMMAND ${CMAKE_COMMAND} -E create_symlink
             ${CMAKE_BINARY_DIR}/compile_commands.json
             ${CMAKE_SOURCE_DIR}/compile_commands.json
         BYPRODUCTS ${CMAKE_SOURCE_DIR}/compile_commands.json
-        COMMENT "Updating symlink: compile_commands.json → project root"
+        COMMENT "Symlinking compile_commands.json → project root"
     )
 endif()
 
-# -------------------------------
+# -------------------------------------------------------
+# FETCH RAYLIB 5.5
+# -------------------------------------------------------
+include(FetchContent)
+
+set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/thirdparty")
+set(BUILD_SHARED_LIBS     OFF CACHE BOOL "" FORCE)
+set(BUILD_EXAMPLES        OFF CACHE BOOL "" FORCE)
+set(BUILD_GAMES           OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(raylib
+    GIT_REPOSITORY https://github.com/raysan5/raylib.git
+    GIT_TAG        5.5
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(raylib)
+
+# -------------------------------------------------------
 # EMSCRIPTEN CONFIG
-# -------------------------------
+# -------------------------------------------------------
 if(EMSCRIPTEN)
     message(STATUS "Building with Emscripten")
 
@@ -28,156 +45,137 @@ if(EMSCRIPTEN)
         ${CMAKE_SYSROOT}/include/emscripten
     )
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
-        -s USE_PTHREADS=0 \
-        -pthread")
+    # pthreads disabled at compile time
+    add_compile_options(-s USE_PTHREADS=0)
 
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
-        -s ALLOW_MEMORY_GROWTH=1 \
-        -s USE_GLFW=3 \
-        -s ASYNCIFY \
-        -s WASM=1 \
-        -s MODULARIZE=1 \
-        -s EXPORT_ES6=1 \
-        -s EXPORT_NAME='AlgoVisualizer' \
-        -s EXIT_RUNTIME=0 \
-        -s ASSERTIONS=0 \
-        --export-dynamic \
-        -s EXPORTED_FUNCTIONS='[\"_main\",  \"_toggle_console_wrapper\", \"_get_scene_ptr\", \"_update_mode\", \"_step_algo\", \"_start_algo\"]' \
-        -s EXPORTED_RUNTIME_METHODS='[\"ccall\", \"cwrap\"]' \
-        --preload-file ${CMAKE_SOURCE_DIR}/resources@/resources \
-        --use-preload-plugins \
-        --emit-tsd ${CMAKE_BINARY_DIR}/wasmmodule.d.ts")    
-
-    # set(CMAKE_EXECUTABLE_SUFFIX ".html")
-
-    execute_process(COMMAND em++ --cflags OUTPUT_VARIABLE EM_CFLAGS)
-    string(STRIP "${EM_CFLAGS}" EM_CFLAGS)
+    set(EM_LINK_FLAGS
+        "-s ALLOW_MEMORY_GROWTH=1 \
+         -s USE_GLFW=3 \
+         -s ASYNCIFY \
+         -s WASM=1 \
+         -s MODULARIZE=1 \
+         -s EXPORT_ES6=1 \
+         -s EXPORT_NAME='AlgoVisualizer' \
+         -s EXIT_RUNTIME=0 \
+         -s ASSERTIONS=0 \
+         --export-dynamic \
+         -s EXPORTED_FUNCTIONS='[\"_main\",\"_toggle_console_wrapper\",\"_get_scene_ptr\",\"_update_mode\",\"_step_algo\",\"_start_algo\", \"_on_resize\"]' \
+         -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]' \
+         --preload-file ${CMAKE_SOURCE_DIR}/resources@/resources \
+         --use-preload-plugins \
+         --emit-tsd ${CMAKE_BINARY_DIR}/wasmmodule.d.ts"
+    )
 endif()
 
-# -------------------------------
-# DEBUG / RELEASE SETTINGS
-# -------------------------------
+# -------------------------------------------------------
+# DEBUG / RELEASE FLAGS  (no LTO anywhere)
+# -------------------------------------------------------
 if(MSVC)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     add_compile_options(/arch:AVX2)
 else()
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
-endif()
-
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) # LTO
-
-# -------------------------------
-# COMPILER OPTIMIZATIONS
-# -------------------------------
-if(MSVC)
-    add_compile_options(/arch:AVX2)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-missing-field-initializers -Wno-gnu-array-member-paren-init")
+    add_compile_options(
+        -Wall -Wextra
+        -Wno-missing-field-initializers
+        -Wno-gnu-array-member-paren-init
+    )
 
     if(EMSCRIPTEN)
-      #add_compile_options(-mavx2 -msimd128)
         if(CMAKE_BUILD_TYPE STREQUAL "Release")
-            add_compile_options(-O3 -fno-lto -ftree-vectorize)
+            add_compile_options(-O3 -ftree-vectorize)
+        else()
+            add_compile_options(-g)
         endif()
     else()
         add_compile_options(-mavx2)
         if(CMAKE_BUILD_TYPE STREQUAL "Release")
-            add_compile_options(-O3 -flto -ftree-vectorize -march=native)
+            add_compile_options(-O3 -ftree-vectorize -march=native)
+        else()
+            add_compile_options(-g)
         endif()
     endif()
 endif()
 
-# -------------------------------
-# DEPENDENCIES
-# -------------------------------
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build Raylib as static libraries" FORCE)
-# add_subdirectory(web)
-add_subdirectory(thirdparty/raylib-5.5)
-#add_subdirectory(thirdparty/imgui-docking)
-#add_subdirectory(thirdparty/rlImGui)
-# add_subdirectory(thirdparty/raygui)
-
-# -------------------------------
+# -------------------------------------------------------
 # SOURCES
-# -------------------------------
+# -------------------------------------------------------
 file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c*")
-if (NOT EMSCRIPTEN)
-  list(FILTER MY_SOURCES EXCLUDE REGEX "src/web.c$")
+if(NOT EMSCRIPTEN)
+    list(FILTER MY_SOURCES EXCLUDE REGEX "src/web\\.c$")
 endif()
-# -------------------------------
+
+# -------------------------------------------------------
 # EXECUTABLE
-# -------------------------------
-add_executable("${PROJECT_NAME}" ${MY_SOURCES})
-set_property(TARGET "${PROJECT_NAME}" PROPERTY CXX_STANDARD 20)
+# -------------------------------------------------------
+add_executable(${PROJECT_NAME} ${MY_SOURCES})
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 
-if(EMSCRIPTEN)
-    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".js" COMPILE_FLAGS "${EM_CFLAGS}" RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/src/wasm")
-
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/src/wasm/${PROJECT_NAME}.wasm"
-        "${CMAKE_SOURCE_DIR}/public/wasm/${PROJECT_NAME}.wasm"
-
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/src/wasm/${PROJECT_NAME}.data"
-        "${CMAKE_SOURCE_DIR}/public/wasm/${PROJECT_NAME}.data"
-
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  "${CMAKE_BINARY_DIR}/wasmmodule.d.ts"
-        "${CMAKE_SOURCE_DIR}/src/types/wasmmodule.d.ts"
+# -------------------------------------------------------
+# INCLUDES & LINKS
+# -------------------------------------------------------
+target_include_directories(${PROJECT_NAME} PUBLIC 
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/web/src"
 )
-endif()
 
-# -------------------------------
+target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
+
+# -------------------------------------------------------
 # DEFINES
-# -------------------------------
+# -------------------------------------------------------
 if(EMSCRIPTEN)
-  target_compile_definitions("${PROJECT_NAME}" PUBLIC PLATFORM_WEB=1 RESOURCES_PATH="/resources/")
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+        PLATFORM_WEB=1
+        RESOURCES_PATH="/resources/"
+    )
 else()
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        target_compile_definitions("${PROJECT_NAME}" PUBLIC
+        target_compile_definitions(${PROJECT_NAME} PRIVATE
             RESOURCES_PATH="./resources/"
             PRODUCTION_BUILD=1
         )
     else()
-        target_compile_definitions("${PROJECT_NAME}" PUBLIC
+        target_compile_definitions(${PROJECT_NAME} PRIVATE
             RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/"
             PRODUCTION_BUILD=0
         )
     endif()
 endif()
 
-# -------------------------------
-# INCLUDE + LIBS
-# -------------------------------
-target_include_directories("${PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/"
-  "${CMAKE_CURRENT_SOURCE_DIR}/web/src" 
-)
-#if(EMSCRIPTEN)
-#   target_link_libraries("${PROJECT_NAME}" PRIVATE web)
-#   target_include_directories("${PROJECT_NAME}" PUBLIC web/src)
+# -------------------------------------------------------
+# PLATFORM-SPECIFIC TARGET PROPERTIES & POST-BUILD
+# -------------------------------------------------------
+if(EMSCRIPTEN)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        SUFFIX ".js"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/src/wasm"
+    )
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        LINK_FLAGS "${EM_LINK_FLAGS}"
+    )
 
-# endif()
-# target_link_libraries("${PROJECT_NAME}" PRIVATE raylib_static imgui rlimgui raygui)
-target_link_libraries("${PROJECT_NAME}" PRIVATE raylib_static )
-
-if(MSVC)
-    target_compile_definitions("${PROJECT_NAME}" PUBLIC _CRT_SECURE_NO_WARNINGS)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/src/wasm/${PROJECT_NAME}.wasm"
+            "${CMAKE_SOURCE_DIR}/public/wasm/${PROJECT_NAME}.wasm"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/src/wasm/${PROJECT_NAME}.data"
+            "${CMAKE_SOURCE_DIR}/public/wasm/${PROJECT_NAME}.data"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_BINARY_DIR}/wasmmodule.d.ts"
+            "${CMAKE_SOURCE_DIR}/src/types/wasmmodule.d.ts"
+        COMMENT "Copying WASM artefacts → public/wasm/ and src/types/"
+    )
 else()
-    set_property(TARGET "${PROJECT_NAME}" PROPERTY POSITION_INDEPENDENT_CODE ON)
-endif()
+    if(MSVC)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
+    else()
+        set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
 
-# -------------------------------
-# AUTO-COPY RESOURCES (native Release only)
-# -------------------------------
-if(NOT EMSCRIPTEN)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/resources"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources"
+            "${CMAKE_SOURCE_DIR}/resources"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources"
+        COMMENT "Copying resources/ → build output dir"
     )
 endif()
-

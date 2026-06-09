@@ -28,6 +28,7 @@ interface WasmModule {
   _step_algo(_0: number): void;
   _update_mode(_0: number, _1: number, _2: number): void;
   _get_scene_ptr(): number;
+  _on_resize(): void;
   _toggle_console_wrapper(): void;
 }
 
