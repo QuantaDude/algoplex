@@ -15,38 +15,6 @@ typedef struct {
 } Mat4;
 
 namespace AV {
-typedef struct {
-  // Define anchors
-  Vector2 main_window_anchor; // ANCHOR ID:1
-  Vector2 anchor02;           // ANCHOR ID:2
-  Vector2 anchor03;           // ANCHOR ID:3
-  Vector2 anchor04;           // ANCHOR ID:4
-
-  // Define controls variables
-  bool main_window_active;      // WindowBox: WindowBox000
-  int input_mode_toggle_active; // ToggleGroup: ToggleGroup001
-  bool DropdownBox007EditMode;
-  int DropdownBox007Active; // DropdownBox: DropdownBox007
-  bool WindowBox012Active;  // WindowBox: WindowBox012
-
-  // Define rectangles
-  Rectangle layoutRecs[17];
-
-  // Custom state variables (depend on development software)
-  // NOTE: This variables should be added manually if required
-  std::vector<Rectangle> adjacencyLayouts;
-  bool showAdjacencyPanel = true;
-  int hoveredAdjacencyElement = -1;
-  bool adjacencyIsNode = false;
-  bool resizingMain = false;
-  bool resizingInfo = false;
-  Vector2 stackScroll = {0, 0};
-  Vector2 adjacencyScroll = {0, 0};
-  Rectangle adjacencyContent = {0};
-  Vector2 resizeStartMouse;
-  Rectangle resizeStartRect;
-
-} BaseGuiState;
 
 class Scene : public State {
 
@@ -61,10 +29,7 @@ public:
   Camera2D g_camera;
   Vector2 mouse_world_pos;
   Font *m_font;
-  BaseGuiState scene_gui_state;
 
-  BaseGuiState InitBaseGui(void);
-  void UpdateGuiLayout(void);
   // void GuiAlgoViz(BaseGuiState *state);
 
   static void Button006();
@@ -122,12 +87,6 @@ public:
   void update() override;
   bool IsMouseHoveringEdge(const Vector2 &, const Vector2 &, const Vector2 &,
                            float thickness = 5.0f);
-  void updateAdjacencyLayouts(const Rectangle &);
-
-  void drawAdjacencyRepresentation(const Rectangle &);
-  void drawAdjacencyMatrix(float, float, float, float, float);
-  void drawAdjacencyList(float, float, float, float, float);
-  Rectangle GetResizeHandle(const Rectangle &);
 
   void dfs();
   void createStack();

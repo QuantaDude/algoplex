@@ -2,7 +2,6 @@
 #if defined(PLATFORM_WEB)
 #include <emscripten/html5.h>
 #endif
-#define RAYGUI_IMPLEMENTATION
 
 #include "app.hpp"
 int main() {

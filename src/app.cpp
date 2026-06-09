@@ -3,8 +3,6 @@
 #include "raylib.h"
 #include "scene.hpp"
 #include "state.hpp"
-#include "utils.h"
-#include <string>
 #if defined(PLATFORM_WEB)
 #include "web.hpp"
 #include <emscripten.h>
@@ -31,7 +29,6 @@ App *App::createInstance(int width, int height) {
     InitWindow(width, height, "Algorithm Visualizer");
     SetExitKey(KEY_NULL);
     if (IsWindowReady()) {
-      GuiLoadStyle(RESOURCES_PATH "style_amber2.rgs");
 
       instance = new App(width, height, RESOURCES_PATH "font/alpha_beta.png");
       instance->setState(
@@ -105,10 +102,9 @@ void App::runWrapper() { getInstance().run(); }
 void App::initWeb() {
   emscripten_get_canvas_element_size("#canvas", &resolution.x, &resolution.y);
   current_state->init();
-  GuiSetFont(g_font);
-// AV::scene_ptr c> (AV::Scene *)current_state.get();
-// std::string str = std::to_string((int)&resolution);
-// print_console(str.c_str());
+  // AV::scene_ptr c> (AV::Scene *)current_state.get();
+  // std::string str = std::to_string((int)&resolution);
+  // print_console(str.c_str());
   emscripten_set_main_loop(runWrapper, 60, 1);
 }
 #endif

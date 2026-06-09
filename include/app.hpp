@@ -1,6 +1,4 @@
 #pragma once
-#include "menu.hpp"
-#include "raygui.h"
 #include "raylib.h"
 #include "state.hpp"
 #include <memory>
