@@ -160,10 +160,7 @@ void AV::Scene::draw(IVector2 *resolution) {
     DrawLineEx(selected_edge_origin->pos,
                GetScreenToWorld2D(GetMousePosition(), g_camera), 3, RED);
   }
-  // if (selectedNodeOrigin != nullptr) {
-  //   DrawLineEx(selectedNodeOrigin->pos,
-  //              GetScreenToWorld2D(GetMousePosition(), g_camera), 3, RED);
-  // }
+
   for (size_t i = 0; i < nodes.size(); i++) {
     DrawCircleV(nodes[i].pos, nodes[i].radius,
                 hoveredNodeIdx == i                    ? GREEN
@@ -189,8 +186,6 @@ void AV::Scene::draw(IVector2 *resolution) {
 
 void AV::Scene::drawUI(IVector2 resolution) {
   SetMouseCursor(MOUSE_CURSOR_DEFAULT);
-
-  int prev_main_mode = main_mode;
 
   Vector2 mousePos = GetMousePosition();
   char posStr[64];
@@ -313,9 +308,7 @@ void AV::Scene::input() {
           clickedOnNode = true;
 
           if (selected_node == nodes.end()) {
-            // selectedNode = &nodes[i];
             selected_node = nodes.begin() + i;
-            // nodes[i].oldPos = nodes[i].pos;
             selected_node->oldPos = selected_node->pos;
             break;
           } else if (selected_node != nodes.begin() + i) {
@@ -324,14 +317,12 @@ void AV::Scene::input() {
           } else if (selected_node == nodes.begin() + i) {
             // Deselect if clicking on the same node
             clickedOnNode = false;
-            // selectedNode = nullptr;
           }
         }
       }
 
       // Deselect if clicking on empty space
       if (!clickedOnNode && selected_node != nodes.end()) {
-        //        selectedNode = nullptr;
         selected_node = nodes.end();
         break;
       }
@@ -349,7 +340,6 @@ void AV::Scene::input() {
         newNode.data = nodes.size();
 
         nodes.push_back(newNode);
-        root = &nodes[0];
         // selectedNode = &nodes.back();
         selected_node = nodes.end();
         selected_edge_origin = nodes.end();
@@ -367,9 +357,7 @@ void AV::Scene::input() {
           clickedOnNode = true;
 
           if (selected_node == nodes.end()) {
-            // selectedNode = &nodes[i];
             selected_node = nodes.begin() + i;
-            // nodes[i].oldPos = nodes[i].pos;
             selected_node->oldPos = selected_node->pos;
             break;
           } else if (selected_node != nodes.begin() + i) {
@@ -378,7 +366,6 @@ void AV::Scene::input() {
           } else if (selected_node == nodes.begin() + i) {
             // Deselect if clicking on the same node
             clickedOnNode = false;
-            // selectedNode = nullptr;
           }
         }
       }
@@ -391,8 +378,6 @@ void AV::Scene::input() {
     }
     if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_DELETE)) {
       if (selected_node != nodes.end() && nodes.begin() != nodes.end()) {
-        // nodes.begin();
-        //  nodes.erase(nodes[0] +selectedNode);
         for (std::vector<Edge>::iterator edge = edges.begin();
              edge < edges.end(); edge++) {
           if (edge->from == (size_t)(selected_node - nodes.begin()) ||
@@ -415,9 +400,6 @@ void AV::Scene::input() {
   case InteractionMode::NodeEdit:
     if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_DELETE)) {
       if (selected_node != nodes.end() && nodes.begin() != nodes.end()) {
-        // nodes.begin();
-        //  nodes.erase(nodes[0] +selectedNode);
-        //
         for (std::vector<Edge>::iterator edge = edges.begin();
              edge < edges.end(); edge++) {
 
@@ -480,7 +462,6 @@ void AV::Scene::input() {
           return;
         }
       }
-      // selectedNodeOrigin = nullptr;
       selected_edge_origin = nodes.end();
     }
     break;
@@ -494,7 +475,6 @@ void AV::Scene::input() {
         hoveredEdgeIdx = i;
         if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) &&
             selected_edge_origin == nodes.end()) {
-          // selectedNodeOrigin = &nodes[edges[i].from];
           selected_edge_origin = nodes.begin() + (edges.begin() + i)->from;
           std::vector<Edge>::iterator it = edges.begin();
           it += i;
@@ -518,7 +498,6 @@ void AV::Scene::input() {
 
             nodes[newEdge.from].edges.push_back(newEdge.to);
             nodes[newEdge.to].edges.push_back(newEdge.from);
-            // selectedNodeOrigin = nullptr;
             selected_edge_origin = nodes.end();
           }
         }
@@ -540,7 +519,6 @@ void AV::Scene::input() {
 
           set_mode(main_mode, sub_mode);
           selected_edge_origin = nodes.begin() + (edges.begin() + i)->from;
-          // selectedNodeOrigin = &nodes[edges[i].from];
           std::vector<Edge>::iterator it = edges.begin();
           it += i;
           edges.erase(it);
@@ -561,7 +539,6 @@ void AV::Scene::input() {
 
           nodes[i].oldPos = nodes[i].pos;
           selected_node = nodes.begin() + i;
-          // selectedNode = &nodes[i];
           m_input_mode = InteractionMode::NodeSelect;
           main_mode = 1;
           sub_mode = 0;
@@ -580,7 +557,6 @@ void AV::Scene::input() {
           sub_mode = 1;
 
           set_mode(main_mode, sub_mode);
-          // selectedNodeOrigin = &nodes[i];
           selected_edge_origin = nodes.begin() + i;
           return;
         }
@@ -598,7 +574,6 @@ void AV::Scene::input() {
 
           set_mode(main_mode, sub_mode);
           selected_edge_origin = nodes.begin() + (edges.begin() + i)->from;
-          // selectedNodeOrigin = &nodes[edges[i].from];
           std::vector<Edge>::iterator it = edges.begin();
           it += i;
           edges.erase(it);
@@ -649,7 +624,6 @@ void AV::Scene::input() {
 
     selected_node = nodes.end();
     selected_edge_origin = nodes.end();
-    // selectedNodeOrigin = nullptr;
   }
   if (algorithm_state == AV::Idle) {
     if (IsKeyPressed(KEY_A)) {
@@ -670,7 +644,6 @@ void AV::Scene::input() {
 
         nodes.push_back(newNode);
         root = &nodes[0];
-        // selectedNode = &nodes.back();
         selected_node = nodes.end() - 1;
         selected_edge_origin = nodes.end();
       }
@@ -722,15 +695,6 @@ void AV::Scene::input() {
       if (IsKeyPressed(KEY_C)) {
         sub_mode = 1;
         set_mode(main_mode, sub_mode);
-        //        if (main_mode == 1) {
-        //        m_input_mode = InteractionMode::NodeCreate;
-
-        //      set_mode(main_mode, sub_mode);
-        //  } else if (main_mode == 2) {
-        //  m_input_mode = InteractionMode::EdgeCreate;
-
-        // set_mode(main_mode, sub_mode);
-        //}
       }
     }
   }
@@ -760,11 +724,6 @@ bool AV::Scene::IsMouseHoveringEdge(const Vector2 &mouse, const Vector2 &p1,
 
 void AV::Scene::update() {
 
-  // if (selectedNode != nullptr) {
-  //   selectedNode->pos = GetMousePosition();
-  //   selectedNode->collider.x = GetMousePosition().x;
-  //   selectedNode->collider.y = GetMousePosition().y;
-  // }
   if (selected_node != nodes.end()) {
     Vector2 mouseWorld = GetScreenToWorld2D(GetMousePosition(), g_camera);
     selected_node->pos = mouseWorld;

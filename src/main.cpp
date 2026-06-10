@@ -1,6 +1,6 @@
 #include "utils.h"
 #if defined(PLATFORM_WEB)
-#include <emscripten/html5.h>
+#include <html5.h>
 #endif
 #include "app.hpp"
 #include <string>
@@ -9,8 +9,6 @@ int main() {
   int width{1920}, height{1080};
 
 #if defined(PLATFORM_WEB)
-  // set_canvas_size_wrapper(&width, &height);
-
   emscripten_get_canvas_element_size("#canvas", &width, &height);
   // std::string str = std::to_string((int)width);
   // print_console(str.c_str());

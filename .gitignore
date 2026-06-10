@@ -26,6 +26,8 @@ dist-ssr
 thirdparty/
 /out
 bin/
+public/wasm/
+src/wasm/
 build/
 build*/
 .cache/

@@ -5,13 +5,13 @@
 #include <stack>
 #include <vector>
 
-#ifdef PLATOFRM_WEB
-
+#if defined ( PLATOFRM_WEB)
 #import <emscripten.h>
 #import <emscripten/em_types.h>
-
 #include <emscripten/em_macros.h>
+
 #endif // PLATOFRM_WEB
+
 
 typedef struct {
   float m[16];

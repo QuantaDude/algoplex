@@ -1,7 +1,6 @@
 
 #ifdef PLATFORM_WEB
 
-
 #include "utils.h"
 #include "web.hpp"
 #include <emscripten.h> // Required for EM_JS macros
@@ -20,23 +19,9 @@ EM_JS(void, toggle_console, (void), {
   output.hidden = !output.hidden;
 });
 
-EM_JS(void, set_mode, (int major, int minor), {
-  window.setMode(major, minor);
-});
+EM_JS(void, set_mode, (int major, int minor),
+      { window.setMode(major, minor); });
 
-// Set canvas size to full window and return area
-EM_JS(void, canvas_set_size, (int *width, int *height),
-      {
-          // const w = window.innerWidth;
-          // consc> h = window.innerHeight;
-          // const canvas = document.getElementById("canvas");
-          // canvas.width = w;
-          // canvas.height = h;
-          //
-          // // Write values to the passed pointers (assuming 32-bit integers)
-          // HEAP32[width >> 2] = w;
-          // HEAP32[height >> 2] = h;
-      });
 EM_JS(void, close_window, (void), { window.close(); });
 void close_window_wrapper() { close_window(); }
 // Print a float value
@@ -45,10 +30,6 @@ EM_JS(void, print_float, (float val), { Module.print(val); });
 // Print a UTF-8 string
 EM_JS(void, print_string, (const char *str),
       { Module.print(UTF8ToString(str)); });
-
-void set_canvas_size_wrapper(int *width, int *height) {
-  canvas_set_size(width, height);
-}
 
 void print_console(const char *str) { print_string(str); };
 void print_console_float(float val) { print_float(val); };

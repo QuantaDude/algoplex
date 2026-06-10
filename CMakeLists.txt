@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.9)
 project(algo-visualizer)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -118,6 +118,14 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/web/src"
 )
+
+if(EMSCRIPTEN)
+    target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
+        "${EMSCRIPTEN_ROOT_PATH}/cache/sysroot/include"
+        "${EMSCRIPTEN_ROOT_PATH}/cache/sysroot/include/emscripten"
+    )
+endif()
+
 
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
 

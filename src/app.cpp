@@ -6,7 +6,6 @@
 #if defined(PLATFORM_WEB)
 #include "web.hpp"
 #include <emscripten.h>
-#include <emscripten/emscripten.h>
 #include <emscripten/html5.h>
 #endif
 #include "app.hpp"
@@ -29,8 +28,8 @@ App *App::createInstance(int width, int height) {
 
     emscripten_get_canvas_element_size("#canvas", &width, &height);
 
-  std::string str = std::to_string((int)width);
-  print_console(str.c_str());
+    std::string str = std::to_string((int)width);
+    print_console(str.c_str());
     InitWindow(width, height, "Algorithm Visualizer");
     SetExitKey(KEY_NULL);
     if (IsWindowReady()) {
@@ -41,7 +40,6 @@ App *App::createInstance(int width, int height) {
       // instance->current_state->init();
 #if defined(PLATFORM_WEB)
       toggle_console();
-      // canvas_set_size(&width, &height);
       // emscripten_get_canvas_element_size("#canvas", &width, &height);
 #endif
     }
@@ -107,9 +105,7 @@ void App::runWrapper() { getInstance().run(); }
 void App::initWeb() {
   emscripten_get_canvas_element_size("#canvas", &resolution.x, &resolution.y);
   current_state->init();
-  // AV::scene_ptr c> (AV::Scene *)current_state.get();
-  // std::string str = std::to_string((int)&resolution);
-  // print_console(str.c_str());
+
   emscripten_set_main_loop(runWrapper, 60, 1);
 }
 #endif
