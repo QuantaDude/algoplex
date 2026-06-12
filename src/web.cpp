@@ -3,27 +3,19 @@
 
 #include "utils.h"
 #include "web.hpp"
-#include <emscripten.h> // Required for EM_JS macros
-#include <emscripten/console.h>
-#include <emscripten/em_js.h>
-#include <emscripten/em_macros.h>
-#include <emscripten/em_types.h>
-#include <emscripten/emscripten.h>
-#include <emscripten/html5.h>
 #include <stdlib.h>
 // Toggle console visibility
 
 extern "C" {
-EM_JS(void, toggle_console, (void), {
-  var output = document.getElementById("output");
-  output.hidden = !output.hidden;
-});
-
 EM_JS(void, set_mode, (int major, int minor),
       { window.setMode(major, minor); });
 
+EM_JS(void, js_register_algorithms, (const char *json), {
+  const obj = JSON.parse(UTF8ToString(json));
+  window.dispatchEvent(new CustomEvent("register_algorithms", {detail : obj}));
+});
+
 EM_JS(void, close_window, (void), { window.close(); });
-void close_window_wrapper() { close_window(); }
 // Print a float value
 EM_JS(void, print_float, (float val), { Module.print(val); });
 
@@ -88,6 +80,5 @@ void list_files() {
   }
 }
 
-void toggle_console_wrapper() { toggle_console(); }
 #endif // PLATFORM_WEB
 

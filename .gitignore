@@ -27,6 +27,7 @@ thirdparty/
 /out
 bin/
 public/wasm/
+src/types/wasmmodule.d.ts
 src/wasm/
 build/
 build*/

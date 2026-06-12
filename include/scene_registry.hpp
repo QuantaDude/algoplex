@@ -1,6 +1,7 @@
 
+#include <cstdint>
+#include <format>
 #include <sys/types.h>
-
 enum class AlgorithmType {
   Graph,
   Sort,
@@ -8,8 +9,8 @@ enum class AlgorithmType {
 
 enum class AlgorithmId {
   DFS,
-  BFS,
-  Bubble,
+  // BFSc>
+  // Bubble,
 
   ALGORITHM_COUNT,
 };
@@ -20,7 +21,7 @@ struct AlgorithmInfo {
   const char *key;
   const char *name;
   const AlgorithmType category;
-  const char *subcategories;
+  const char *subCategories;
 };
 
 static const AlgorithmInfo ALGORITHMS[] = {
@@ -29,9 +30,8 @@ static const AlgorithmInfo ALGORITHMS[] = {
 
 };
 
-static constexpr int ALGORITHM_COUNT =
+static constexpr uint16_t ALGORITHM_COUNT =
     sizeof(ALGORITHMS) / sizeof(ALGORITHMS[0]);
 
-std::static_assert(ALGORITHM_COUNT ==
-                       static_cast<int>(AlgorithmId::ALGORITHM_COUNT),
-                   "Algorithm Count mismatch.");
+static_assert(ALGORITHM_COUNT == static_cast<int>(AlgorithmId::ALGORITHM_COUNT),
+              "Algorithm Count mismatch.");

@@ -2,7 +2,12 @@
 #include "menu.hpp"
 #include "raylib.h"
 #include "scene.hpp"
+#include "scene_registry.hpp"
 #include "state.hpp"
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <utility>
 #if defined(PLATFORM_WEB)
 #include "web.hpp"
 #include <emscripten.h>
@@ -39,7 +44,6 @@ App *App::createInstance(int width, int height) {
           std::make_unique<AV::Scene>(&instance->getDefaultFont()));
       // instance->current_state->init();
 #if defined(PLATFORM_WEB)
-      toggle_console();
       // emscripten_get_canvas_element_size("#canvas", &width, &height);
 #endif
     }
@@ -106,6 +110,28 @@ void App::initWeb() {
   emscripten_get_canvas_element_size("#canvas", &resolution.x, &resolution.y);
   current_state->init();
 
+  notify_algorithms();
   emscripten_set_main_loop(runWrapper, 60, 1);
+}
+
+extern "C" void notify_algorithms() {
+  std::string json = "[";
+
+  for (uint16_t i = 0; i < ALGORITHM_COUNT; i++) {
+    const auto &a = ALGORITHMS[i];
+
+    if (i > 0)
+      json += ",";
+    json += "{";
+    json += "\"id\":\"" +
+            std::string(std::to_string(std::to_underlying(a.id))) + "\",";
+    json += "\"name\":\"" + std::string(a.name) + "\",";
+    json += "\"category\":\"" +
+            std::string(std::to_string(std::to_underlying(a.category))) + "\",";
+    json += "\"subCategories\":\"" + std::string(a.subCategories) + "\"";
+    json += "}";
+  }
+  json += "]";
+  js_register_algorithms(json.c_str());
 }
 #endif

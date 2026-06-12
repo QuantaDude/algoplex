@@ -7,16 +7,17 @@ export default function SettingsPanel(props: {
   const [majorMode, setMajorMode] = useState(0);
   const [minorMode, setMinorMode] = useState(0);
 
-  useEffect(
-()=>{
-      window.setMode = (major: number, minor: number) =>{
-        setMajorMode(major); setMinorMode(minor);
-      }
-    }
-    ,[]);
+  useEffect(() => {
+    window.setMode = (major: number, minor: number) => {
+      setMajorMode(major);
+      setMinorMode(minor);
+    };
+  }, []);
   return (
     <aside className="right panel">
-      <h3>Controls & Settings</h3>
+      <div className="title">
+        <h3>Controls & Settings</h3>
+      </div>
       <div className="panel-subsection">
         {[
           { id: 0, name: "Free" },

@@ -6,6 +6,8 @@ import Navbar from "./components/navbar/Navbar.js";
 import AlgoMenuPanel from "./components/algo-menu-panel/AlgoMenuPanel.js";
 import SettingsPanel from "./components/settings-panel/SettingsPanel.js";
 import type { MainModule } from "./types/wasmmodule.d.ts";
+import InfoPanel from "./components/info-panel/InfoPanel.tsx";
+import CodePanel from "./components/code-panel/CodePanel.tsx";
 
 function App() {
   const moduleRef: RefObject<MainModule | null> = useRef(null);
@@ -15,6 +17,13 @@ function App() {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
+    window.addEventListener(
+      "register_algorithms",
+      (e: CustomEvent) => {
+        console.log(e.detail); // e.detail is the parsed array
+      },
+      { once: true },
+    );
     AlgoVisualizer({
       canvas: (function () {
         var canvas = document.getElementById("canvas");
@@ -48,7 +57,6 @@ function App() {
     }).then((module: MainModule) => {
       moduleRef.current = module;
 
-
       // window.saveFileFromMEMFSToDisc> = (
       //   memoryFSname: string,
       //   localFSname: string,
@@ -66,13 +74,15 @@ function App() {
     <>
       <Navbar wasmModule={moduleRef!} />
       <AlgoMenuPanel />
-      <textarea id="output"></textarea>
       <canvas
         id="canvas"
         style={{ width: "100%", height: "100%" }}
         onContextMenu={(e) => e.preventDefault()}
       />
       <SettingsPanel wasmModule={moduleRef!} />
+      <InfoPanel id="info1panel" />
+      <CodePanel></CodePanel>
+      <InfoPanel id="info2panel" />
     </>
   );
 }

@@ -34,3 +34,5 @@ public:
   void run(void);
   static void runWrapper();
 };
+
+extern "C" void notify_algorithms();

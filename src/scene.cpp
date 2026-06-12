@@ -153,20 +153,20 @@ void AV::Scene::draw(IVector2 *resolution) {
   rlPopMatrix();
 
   for (size_t i = 0; i < edges.size(); i++) {
-    Color col = (i == hoveredEdgeIdx) ? RED : DARKGRAY;
+    Color col = (i == hoveredEdgeIdx) ? COLOR_PATH : COLOR_EDGE;
     DrawLineEx(nodes[edges[i].from].pos, nodes[edges[i].to].pos, 3, col);
   }
   if (selected_edge_origin != nodes.end()) {
     DrawLineEx(selected_edge_origin->pos,
-               GetScreenToWorld2D(GetMousePosition(), g_camera), 3, RED);
+               GetScreenToWorld2D(GetMousePosition(), g_camera), 3, COLOR_PATH);
   }
 
   for (size_t i = 0; i < nodes.size(); i++) {
     DrawCircleV(nodes[i].pos, nodes[i].radius,
-                hoveredNodeIdx == i                    ? GREEN
-                : (selected_node == nodes.begin() + i) ? BLUE
-                : (root == &nodes[i])                  ? GOLD
-                                                       : RED);
+                hoveredNodeIdx == i                    ? COLOR_VISITED
+                : (selected_node == nodes.begin() + i) ? NORD10
+                : (root == &nodes[i])                  ? NORD13
+                                                       : COLOR_NODE);
 
     char idText[10];
     sprintf(idText, "%d", (int)i);
@@ -227,7 +227,7 @@ void AV::Scene::drawUI(IVector2 resolution) {
     snprintf(keybindStr, sizeof(keybindStr),
              "A - Create new node.\n\nN - Node Select Mode.\n\nE - "
              "Edge Edit"
-             "Mode.\n\nC -Edge Create Mode.\n\nRMB- Create & Connect "
+             "Mode.\n\nC -Edge Create Mode.\n\nRMB- Create "
              "Edge.\n\nEsc - Free Mode.");
     break;
   case InteractionMode::EdgeSelect:
@@ -255,13 +255,13 @@ void AV::Scene::drawUI(IVector2 resolution) {
   int keybindStrWidth = MeasureText(keybindStr, 25);
   int modeStrWidth = MeasureText(modeStr, 25);
 
-  const Color WHITE_T = {WHITE.r, WHITE.g, WHITE.b, 128};
-  DrawText(keybindStr, (resolution.x - keybindStrWidth) / 2, 100, 25, WHITE_T);
-  DrawText(modeStr, (resolution.x - modeStrWidth) / 2, 20, 25, WHITE_T);
-  DrawText(posStr, 10, resolution.y - 30, 25, WHITE_T);
+  DrawText(keybindStr, 50 + (resolution.x - keybindStrWidth) / 2, 100, 25,
+           COLOR_TEXT);
+  DrawText(modeStr, 50 + (resolution.x - modeStrWidth) / 2, 20, 25, COLOR_TEXT);
+  DrawText(posStr, 10, resolution.y - 30, 25, COLOR_TEXT);
 
   DrawText(getKeyName(), resolution.x - MeasureText(getKeyName(), 25) - 10,
-           resolution.y - 30, 25, WHITE_T);
+           resolution.y - 30, 25, COLOR_TEXT);
 }
 void AV::Scene::update_input_mode() {
   if (main_mode == 0) {

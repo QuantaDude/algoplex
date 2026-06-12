@@ -61,7 +61,7 @@ if(EMSCRIPTEN)
          -s EXIT_RUNTIME=0 \
          -s ASSERTIONS=0 \
          --export-dynamic \
-         -s EXPORTED_FUNCTIONS='[\"_main\",\"_toggle_console_wrapper\",\"_get_scene_ptr\",\"_update_mode\",\"_step_algo\",\"_start_algo\", \"_on_resize\"]' \
+         -s EXPORTED_FUNCTIONS='[\"_main\",\"_get_scene_ptr\",\"_update_mode\",\"_step_algo\",\"_start_algo\", \"_on_resize\"]' \
          -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]' \
          --preload-file ${CMAKE_SOURCE_DIR}/resources@/resources \
          --use-preload-plugins \
@@ -122,7 +122,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 if(EMSCRIPTEN)
     target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
         "${EMSCRIPTEN_ROOT_PATH}/cache/sysroot/include"
-        "${EMSCRIPTEN_ROOT_PATH}/cache/sysroot/include/emscripten"
     )
 endif()
 

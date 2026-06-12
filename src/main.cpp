@@ -1,6 +1,6 @@
 #include "utils.h"
 #if defined(PLATFORM_WEB)
-#include <html5.h>
+#include <emscripten/html5.h>
 #endif
 #include "app.hpp"
 #include <string>

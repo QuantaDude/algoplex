@@ -4,14 +4,12 @@
 #include <cstdint>
 #include <stack>
 #include <vector>
-
-#if defined ( PLATOFRM_WEB)
+#include "colors.h"
+#if defined(PLATFORM_WEB)
 #import <emscripten.h>
-#import <emscripten/em_types.h>
 #include <emscripten/em_macros.h>
-
+#import <emscripten/em_types.h>
 #endif // PLATOFRM_WEB
-
 
 typedef struct {
   float m[16];
