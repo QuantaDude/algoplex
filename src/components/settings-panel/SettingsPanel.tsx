@@ -1,8 +1,12 @@
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useState, type Ref, type RefObject } from "react";
 import type { MainModule } from "../../types/wasmmodule";
 
-export default function SettingsPanel(props: {
+export default function SettingsPanel({
+  wasmModule,
+  ref,
+}: {
   wasmModule: RefObject<MainModule>;
+  ref: Ref<HTMLElement>;
 }) {
   const [majorMode, setMajorMode] = useState(0);
   const [minorMode, setMinorMode] = useState(0);
@@ -14,7 +18,7 @@ export default function SettingsPanel(props: {
     };
   }, []);
   return (
-    <aside className="right panel">
+    <aside ref={ref} className="right panel">
       <div className="title">
         <h3>Controls & Settings</h3>
       </div>

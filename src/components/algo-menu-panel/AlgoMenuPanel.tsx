@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, type Ref } from "react";
 
-export default function AlgoMenuPanel() {
+export default function AlgoMenuPanel({ ref }: {ref: Ref<HTMLElement>}) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <aside className="sidebar panel">
+    <aside ref={ref} className="sidebar panel">
       <div className="title">
-        <h3>Algorithm Visualizer</h3>
+        <h3>Algorithm List</h3>
       </div>
       <div className="panel-subsection">
         <div id="algo-list">

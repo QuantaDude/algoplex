@@ -93,7 +93,6 @@ AV::Scene *get_scene_ptr() { return AV::scene_ptr; }
 
 void on_resize(void) {
   int x, y;
-
   emscripten_get_canvas_element_size("#canvas", &x, &y);
   SetWindowSize(x, y);
 }
@@ -133,17 +132,9 @@ void AV::Scene::init() {
   // SetMouseScale(resolution->x / 300.0f, resolution->y / 150.0f);
 }
 void AV::Scene::draw(IVector2 *resolution) {
-#if defined(PLATFORM_WEB)
-  emscripten_get_canvas_element_size("#canvas", &resolution->x, &resolution->y);
-
-  SetWindowSize(resolution->x, resolution->y);
-#elif defined(PLATFORM_DESKTOP)
-  resolution->x = GetScreenWidth();
-  resolution->y = GetScreenHeight();
-#endif
 
   BeginDrawing();
-  ClearBackground({41, 41, 41, 100});
+  ClearBackground({0, 0, 0, 0});
 
   BeginMode2D(g_camera);
   rlPushMatrix();
@@ -182,6 +173,15 @@ void AV::Scene::draw(IVector2 *resolution) {
 
   EndDrawing();
   update_input_mode();
+
+#if defined(PLATFORM_WEB)
+  emscripten_get_canvas_element_size("#canvas", &resolution->x, &resolution->y);
+
+  SetWindowSize(resolution->x, resolution->y);
+#elif defined(PLATFORM_DESKTOP)
+  resolution->x = GetScreenWidth();
+  resolution->y = GetScreenHeight();
+#endif
 }
 
 void AV::Scene::drawUI(IVector2 resolution) {
@@ -784,4 +784,3 @@ void AV::Scene::drawDFSStack(Rectangle box) {
     y += 22;
   }
 }
-

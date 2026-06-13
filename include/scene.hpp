@@ -1,10 +1,10 @@
+#include "colors.h"
 #include "raylib.h"
 #include "state.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <stack>
 #include <vector>
-#include "colors.h"
 #if defined(PLATFORM_WEB)
 #import <emscripten.h>
 #include <emscripten/em_macros.h>
@@ -22,6 +22,8 @@ class Scene : public State {
 public:
   enum class DFSPhase { ENTER, EXIT };
 
+  int VIRTUAL_W= 1920, VIRTUAL_H = 1080;
+  RenderTexture2D target;
   struct DFSFrame {
     int node;
     DFSPhase phase;
