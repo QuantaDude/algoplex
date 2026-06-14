@@ -35,9 +35,9 @@ export default function SettingsPanel({
               className={majorMode === b.id ? "selected" : ""}
               onClick={(e) => {
                 setMajorMode(b.id);
-                const ptr = props.wasmModule.current._get_scene_ptr();
+                const ptr = wasmModule.current._get_scene_ptr();
                 console.log(ptr);
-                props.wasmModule.current._update_mode(ptr, b.id, minorMode);
+                wasmModule.current._update_mode(ptr, b.id, minorMode);
               }}
             >
               {b.name}
@@ -58,8 +58,8 @@ export default function SettingsPanel({
               className={minorMode === b.id && majorMode != 0 ? "selected" : ""}
               onClick={(e) => {
                 setMinorMode(b.id);
-                const ptr = props.wasmModule.current._get_scene_ptr();
-                props.wasmModule.current._update_mode(ptr, majorMode, b.id);
+                const ptr = wasmModule.current._get_scene_ptr();
+                wasmModule.current._update_mode(ptr, majorMode, b.id);
               }}
               disabled={majorMode === 0 ? true : false}
             >

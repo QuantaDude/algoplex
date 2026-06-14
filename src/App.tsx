@@ -9,10 +9,14 @@ import type { MainModule } from "./types/wasmmodule.d.ts";
 import InfoPanel from "./components/info-panel/InfoPanel.tsx";
 import CodePanel from "./components/code-panel/CodePanel.tsx";
 import Tooltip, { type TooltipPage } from "./components/tooltip/Tooltip.tsx";
+import StackView from "./components/stackView/StackView.tsx";
 
+const stack = [["1"], ["1", "2", "3"]];
 function App() {
+  const [currentStack, setStack] = useState(stack[0]);
   const moduleRef: RefObject<MainModule | null> = useRef(null);
   const hasInitialized: RefObject<boolean> = useRef(false);
+  const [showTooltip, setShowTooltip] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true);
 
   const navbarRef: RefObject<HTMLElement> = useRef(null);
@@ -21,6 +25,7 @@ function App() {
   const codePanelRef: RefObject<HTMLElement> = useRef(null);
 
   const infoPanel1Ref: RefObject<HTMLElement> = useRef(null);
+  const infoPanel2Ref: RefObject<HTMLElement> = useRef(null);
   const canvasRef: RefObject<HTMLElement> = useRef(null);
 
   const pages: TooltipPage[] = [
@@ -59,6 +64,30 @@ function App() {
       tooltipPos: { x: -700, y: 0 },
       arrowRotation: -90,
       arrowRelDistance: { x: 25, y: 10 },
+    },
+
+    {
+      title: "Controls Panel",
+      text: [
+        "Create a few nodes by selecting Node and Create. Then clicking on the canvas to place them.",
+        "To connect them, Select Edge, then right click on a node in the canvas to start drawing an edge.",
+      ],
+      newLoc: false,
+      tooltipTarget: settingsPanelRef,
+      subHighlightTarget: canvasRef,
+      targetCOverride: {
+        right: 1,
+        left: 1,
+        top: 1,
+        bottom: 0,
+        x: 0,
+        y: 0,
+        height: 0,
+        width: 0,
+      },
+      tooltipPos: { x: -200, y: 250 },
+      arrowRotation: 200,
+      arrowRelDistance: { x: 10, y: -3 },
     },
     {
       title: "Code Editor",
@@ -148,14 +177,25 @@ function App() {
       <AlgoMenuPanel ref={algoMenuPanelRef} />
       <canvas
         id="canvas"
+        ref={canvasRef}
         style={{ width: "100%", height: "100%" }}
         onContextMenu={(e) => e.preventDefault()}
       />
-      <Tooltip pages={pages} />
+      {showTooltip && (
+        <Tooltip
+          pages={pages}
+          onClose={() => {
+            setShowTooltip(false);
+          }}
+        />
+      )}
       <SettingsPanel ref={settingsPanelRef} wasmModule={moduleRef!} />
-      <InfoPanel ref={infoPanel1Ref} id="info1panel" />
+      <InfoPanel ref={infoPanel1Ref} id="info1panel" type="Stack">
+        <StackView items={currentStack} />
+        <button type="button" onClick={() => setStack(stack[1])}></button>
+      </InfoPanel>
       <CodePanel ref={codePanelRef}></CodePanel>
-      <InfoPanel id="info2panel" />
+      <InfoPanel ref={infoPanel2Ref} id="info2panel" type="Graph" />
     </>
   );
 }

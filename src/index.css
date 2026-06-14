@@ -241,19 +241,31 @@ body {
 
 #info1panel {
   grid-area: bottoml;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 12px;
+  /* display: flex; */
+  /* flex-directionc> column; */
+  /* align-items: center; */
+  /* justify-content: space-between; */
+  /* padding: 8px 12px; */
   border-top: 1px solid var(--border);
-  background: var(--bg-elevated);
+  background: var(--bg);
 }
-
+#info1panel .title {
+  /* padding: 8px 12px; */
+  width: 100%;
+}
 #info2panel {
   grid-area: bottomr;
-  padding: 8px 12px;
+  /* displayc> flex; */
+  /* flex-direction: column; */
+  /* align-items: center; */
+  /* justify-content: space-between; */
+
+  /* displayc> grid; */
+  /* grid-auto-flow: row; */
+  /* grid-template-rows: 40px 1fr; */
+  /* padding: 8px 12px; */
   border-top: 1px solid var(--border);
-  background: var(--bg-elevated);
+  background: var(--bg);
 }
 
 #code-panel {
@@ -437,6 +449,18 @@ body {
     tooltip-nudge 3.6s ease-in-out infinite 1s,
     tooltip-scale 10s ease-in-out infinite 1.5s;
 }
+.tooltip .title {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.tooltip .title button {
+  font-size: 11px;
+  padding: 2px 6px;
+  margin: 0;
+  line-height: 1;
+  border-radius: 4px;
+}
 .tooltip:hover {
   animation-play-state: paused;
   box-shadow: 0px 0px 20px 20px rgb(from var(--nord14) r g b / 0.1);
@@ -533,5 +557,42 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 4px 4px;
+}
+
+.tooltip-target-highlight {
+  position: absolute; /*must be placed outside the tooltip*/
+
+  opacity: 0;
+  border: 2px solid var(--nord13);
+  pointer-events: none;
+  animation:
+    target-fade-in 1s ease forwards,
+    target-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes target-fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes target-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+  50% {
+    box-shadow: 0 0 15px 5px rgb(from var(--nord13) r g b / 0.5);
+  }
+}
+
+.stack-new-element {
+  color: black;
+  background-color: var(--nord14);
+}
+.stack-element {
+  /* background-color: var(--nord15); */
 }
 
