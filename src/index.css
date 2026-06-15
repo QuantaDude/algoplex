@@ -253,6 +253,11 @@ body {
   /* padding: 8px 12px; */
   width: 100%;
 }
+.info-content {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+}
 #info2panel {
   grid-area: bottomr;
   /* displayc> flex; */
@@ -332,15 +337,23 @@ body {
     color 0.15s;
 }
 .panel button:disabled {
+  background: var(--nord3);
+  transition: none;
+  transform: none;
+  cursor: default;
+  /* pointer-events: none; */
+}
+
+.tooltip button:disabled {
   visibility: hidden;
 }
 
-.panel button:hover {
+.panel button:not(:disabled):hover {
   background: var(--accent-bg);
   border-color: var(--accent-border);
   color: var(--text-h);
 }
-.panel button:active {
+.panel button:not(:disabled):active {
   transform: scale(0.98);
 }
 
@@ -348,6 +361,19 @@ body {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
+}
+
+.panel-subsection.tab-bar {
+  /* background-color: var(--nord15); */
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-bar button {
+  border-radius: 0px;
+  width: 100%;
+  margin: 0;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 /* ── Algo list ──────────────────────────────────────── */
@@ -588,6 +614,11 @@ body {
   }
 }
 
+.stack-cell {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 4px;
+}
 .stack-new-element {
   color: black;
   background-color: var(--nord14);

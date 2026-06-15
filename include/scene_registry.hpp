@@ -2,15 +2,15 @@
 #include <cstdint>
 #include <format>
 #include <sys/types.h>
-enum class AlgorithmType {
-  Graph,
+enum class SceneType {
+  Graph, // Graph & Tree
   Sort,
 };
 
 enum class AlgorithmId {
   DFS,
-  // BFSc>
-  // Bubble,
+  BFS,
+  Bubble,
 
   ALGORITHM_COUNT,
 };
@@ -20,15 +20,17 @@ struct AlgorithmInfo {
   const AlgorithmId id;
   const char *key;
   const char *name;
-  const AlgorithmType category;
+  const SceneType category;
   const char *subCategories;
 };
 
 static const AlgorithmInfo ALGORITHMS[] = {
-    {AlgorithmId::DFS, "dfs", "Depth First Search", AlgorithmType::Graph,
-     "searching, traversal"}
-
-};
+    {AlgorithmId::DFS, "dfs", "Depth First Search", SceneType::Graph,
+     "searching, traversal"},
+    {AlgorithmId::BFS, "bfs", "Breadth First Search", SceneType::Graph,
+     "searching, traversal"},
+    {AlgorithmId::Bubble, "bubble_sort", "Bubble Sort", SceneType::Sort,
+     "sorting"}};
 
 static constexpr uint16_t ALGORITHM_COUNT =
     sizeof(ALGORITHMS) / sizeof(ALGORITHMS[0]);

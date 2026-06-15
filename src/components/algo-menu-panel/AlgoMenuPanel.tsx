@@ -1,7 +1,45 @@
-import { useState, type Ref } from "react";
+import { useEffect, useMemo, useState, type ReactNode, type Ref } from "react";
+import { SceneTypeLabel } from "../../types/scene_registry";
 
-export default function AlgoMenuPanel({ ref }: {ref: Ref<HTMLElement>}) {
-  const [isOpen, setIsOpen] = useState(false);
+export interface AlgoDescriptor {
+  id: string;
+  name: string;
+  category: string;
+  subCategories: string;
+}
+
+const SCENE_TYPE: Record<string, string> = {
+  "0": "Graph / Tree",
+  "1": "Sort",
+};
+
+export default function AlgoMenuPanel({ ref }: { ref: Ref<HTMLElement> }) {
+  const [algorithms, setAlgorithms] = useState<AlgoDescriptor[]>([]);
+  const [groupVisible, setGroupVisibility] = useState<Record<string, boolean>>(
+    {},
+  );
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      setAlgorithms((e as CustomEvent<AlgoDescriptor[]>).detail);
+    };
+    window.addEventListener("register_algorithms", handler, { once: true });
+    return () => window.removeEventListener("register_algorithms", handler);
+  }, []);
+
+  const algoGroups = useMemo(() => {
+    const map = new Map<string, AlgoDescriptor[]>();
+    for (const algo of algorithms) {
+      if (!map.has(algo.category)) map.set(algo.category, []);
+      map.get(algo.category)!.push(algo);
+    }
+    return map;
+  }, [algorithms]);
+
+  const toggleVisibility = (category: string) => {
+    setGroupVisibility((prev) => ({ ...prev, [category]: !prev[category] }));
+  };
+
   return (
     <aside ref={ref} className="sidebar panel">
       <div className="title">
@@ -9,32 +47,39 @@ export default function AlgoMenuPanel({ ref }: {ref: Ref<HTMLElement>}) {
       </div>
       <div className="panel-subsection">
         <div id="algo-list">
-          <button
-            type="button"
-            className="dropdown-btn"
-            onClick={(e) => {
-              setIsOpen(!isOpen);
-            }}
-          >
-            Graph/Tree{" "}
-            <svg
-              className={`arrow ${isOpen ? "open" : ""}`}
-              width="16"
-              height="10"
-              fill="currentColor"
-              viewBox="0 0 8 5"
-            >
-              <path d="M 0 0 L 4 5 L 8 0" />
-            </svg>
-          </button>
-          <ul className={`dropdown-li ${isOpen ? "open" : ""}`}>
-            <li>
-              <button className="dropdown-li-btn">DFS</button>
-            </li>
-            <li>
-              <button className="dropdown-li-btn">DFS - Advanced</button>
-            </li>
-          </ul>
+          {Array.from(algoGroups.entries()).map<ReactNode>(
+            ([category, algos]) => (
+              <div key={category}>
+                <button
+                  type="button"
+                  className="dropdown-btn"
+                  onClick={() => toggleVisibility(category)}
+                >
+                  {SceneTypeLabel[category] ?? `Category ${category}`}
+                  <svg
+                    className={`arrow ${!!groupVisible[category] ? "open" : ""}`}
+                    width="16"
+                    height="10"
+                    fill="currentColor"
+                    viewBox="0 0 8 5"
+                  >
+                    <path d="M 0 0 L 4 5 L 8 0" />
+                  </svg>
+                </button>
+                <ul
+                  className={`dropdown-li ${!!groupVisible[category] ? "open" : ""}`}
+                >
+                  {algos.map((algo) => (
+                    <li key={algo.id}>
+                      <button className="dropdown-li-btn" onClick={() => {}}>
+                        {algo.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ),
+          )}
         </div>
       </div>
     </aside>

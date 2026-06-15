@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { saveAs } from "file-saver";
 import AlgoVisualizer from "./wasm/algo-visualizer.js";
-import "./App.css";
 import Navbar from "./components/navbar/Navbar.js";
-import AlgoMenuPanel from "./components/algo-menu-panel/AlgoMenuPanel.js";
+import AlgoMenuPanel, {
+  type AlgoDescriptor,
+} from "./components/algo-menu-panel/AlgoMenuPanel.js";
 import SettingsPanel from "./components/settings-panel/SettingsPanel.js";
 import type { MainModule } from "./types/wasmmodule.d.ts";
 import InfoPanel from "./components/info-panel/InfoPanel.tsx";
@@ -13,8 +14,11 @@ import StackView from "./components/stackView/StackView.tsx";
 
 const stack = [["1"], ["1", "2", "3"]];
 function App() {
-  const [currentStack, setStack] = useState(stack[0]);
+
+  const [currentStack, setStack] = useState(stack[1]);
+  //wasmModule
   const moduleRef: RefObject<MainModule | null> = useRef(null);
+
   const hasInitialized: RefObject<boolean> = useRef(false);
   const [showTooltip, setShowTooltip] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true);
@@ -118,14 +122,7 @@ function App() {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-    window.addEventListener(
-      "register_algorithms",
-      (e: CustomEvent) => {
-        console.log(e.detail); // e.detail is the parsed array
-      },
-      { once: true },
-    );
-    AlgoVisualizer({
+        AlgoVisualizer({
       canvas: (function () {
         var canvas = document.getElementById("canvas");
 
@@ -192,7 +189,6 @@ function App() {
       <SettingsPanel ref={settingsPanelRef} wasmModule={moduleRef!} />
       <InfoPanel ref={infoPanel1Ref} id="info1panel" type="Stack">
         <StackView items={currentStack} />
-        <button type="button" onClick={() => setStack(stack[1])}></button>
       </InfoPanel>
       <CodePanel ref={codePanelRef}></CodePanel>
       <InfoPanel ref={infoPanel2Ref} id="info2panel" type="Graph" />

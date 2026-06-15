@@ -25,7 +25,9 @@ export default function StackView({ items }: { items: string[] }) {
           <p
             key={index}
             className={
-              newItems.includes(item) ? "stack-new-element" : "stack-element"
+              + newItems.includes(item)
+                ? "stack-cell stack-new-element"
+                : "stack-cell stack-element"
             }
           >
             {item}
