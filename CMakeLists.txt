@@ -61,8 +61,8 @@ if(EMSCRIPTEN)
          -s EXIT_RUNTIME=0 \
          -s ASSERTIONS=0 \
          --export-dynamic \
-         -s EXPORTED_FUNCTIONS='[\"_main\",\"_get_scene_ptr\",\"_update_mode\",\"_step_algo\",\"_start_algo\", \"_on_resize\"]' \
-         -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]' \
+         -s EXPORTED_FUNCTIONS='[\"_main\",\"_get_scene_ptr\",\"_update_mode\",\"_step_algo\",\"_start_algo\", \"_on_resize\", \"_get_stack_json\"]' \
+         -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\", \"UTF8ToString\"]' \
          --preload-file ${CMAKE_SOURCE_DIR}/resources@/resources \
          --use-preload-plugins \
          --emit-tsd ${CMAKE_BINARY_DIR}/wasmmodule.d.ts"

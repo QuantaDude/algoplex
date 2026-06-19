@@ -1,5 +1,7 @@
 #pragma once
 #include "raylib.h"
+#include "scene.hpp"
+#include "scene_registry.hpp"
 #include "state.hpp"
 #include <memory>
 #if defined(PLATFORM_WEB)

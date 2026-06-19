@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { saveAs } from "file-saver";
 import AlgoVisualizer from "./wasm/algo-visualizer.js";
 import Navbar from "./components/navbar/Navbar.js";
@@ -11,11 +11,11 @@ import InfoPanel from "./components/info-panel/InfoPanel.tsx";
 import CodePanel from "./components/code-panel/CodePanel.tsx";
 import Tooltip, { type TooltipPage } from "./components/tooltip/Tooltip.tsx";
 import StackView from "./components/stackView/StackView.tsx";
+import { createTooltipPages } from "./tooltips.ts";
+import type { DFS_AFrame } from "./types/InfoPanel.ts";
 
-const stack = [["1"], ["1", "2", "3"]];
 function App() {
-
-  const [currentStack, setStack] = useState(stack[1]);
+  const [currentStack, setStack] = useState<Array<DFS_AFrame>>([]);
   //wasmModule
   const moduleRef: RefObject<MainModule | null> = useRef(null);
 
@@ -32,97 +32,27 @@ function App() {
   const infoPanel2Ref: RefObject<HTMLElement> = useRef(null);
   const canvasRef: RefObject<HTMLElement> = useRef(null);
 
-  const pages: TooltipPage[] = [
-    {
-      title: "Algorithm List",
-      text: [
-        "This panel contains all the algorithms you can try out in Algo Visualizer.",
-        "You can also select the `custom algorithm` to write your own algorithm.",
-      ],
-      newLoc: true,
-      tooltipTarget: algoMenuPanelRef,
-      tooltipPos: { x: 250, y: -100 },
-      arrowRotation: 90,
-      arrowRelDistance: { x: -5, y: 10 },
-    },
-    {
-      title: "Algorithm List",
-      text: [
-        "For now, you may pick one algorithm from the Graph/Tree list.",
-        "Pick one.",
-      ],
-      newLoc: false,
-      tooltipTarget: algoMenuPanelRef,
-      tooltipPos: { x: 250, y: -100 },
-      arrowRotation: 90,
-      arrowRelDistance: { x: -5, y: 10 },
-    },
-    {
-      title: "Controls Panel",
-      text: [
-        "This Panel has all the input modes for the canvas, and settings for the algorithm scene.",
-        "All the controls and settings for the selected algorithm are here.",
-      ],
-      newLoc: true,
-      tooltipTarget: settingsPanelRef,
-      tooltipPos: { x: -700, y: 0 },
-      arrowRotation: -90,
-      arrowRelDistance: { x: 25, y: 10 },
-    },
+  const tooltipPages = useMemo(
+    () =>
+      createTooltipPages({
+        algoMenuPanelRef,
+        settingsPanelRef,
+        canvasRef,
+        infoPanel1Ref,
+        codePanelRef,
+      }),
+    [],
+  );
 
-    {
-      title: "Controls Panel",
-      text: [
-        "Create a few nodes by selecting Node and Create. Then clicking on the canvas to place them.",
-        "To connect them, Select Edge, then right click on a node in the canvas to start drawing an edge.",
-      ],
-      newLoc: false,
-      tooltipTarget: settingsPanelRef,
-      subHighlightTarget: canvasRef,
-      targetCOverride: {
-        right: 1,
-        left: 1,
-        top: 1,
-        bottom: 0,
-        x: 0,
-        y: 0,
-        height: 0,
-        width: 0,
-      },
-      tooltipPos: { x: -200, y: 250 },
-      arrowRotation: 200,
-      arrowRelDistance: { x: 10, y: -3 },
-    },
-    {
-      title: "Code Editor",
-      text: [
-        "This is where the algorithm's code is displayed and then highlighted step wise during execution",
-      ],
-      newLoc: true,
-      tooltipTarget: codePanelRef,
-      tooltipPos: { x: 0, y: -700 },
-      arrowRotation: 0,
-      arrowRelDistance: { x: 10, y: 25 },
-    },
-    {
-      title: "DFS Stack",
-      text: [
-        "This is the stack view.",
-        "Here you will be able the nodes which will get pushed into the stack array.",
-      ],
-      newLoc: true,
-      tooltipTarget: infoPanel1Ref,
-      tooltipPos: { x: 200, y: -500 },
-      arrowRotation: 45,
-      arrowRelDistance: { x: -5, y: 20 },
-    },
-  ];
+  function updateStack(stack: Array<string>) {
+    setStack(stack);
+  }
 
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-        AlgoVisualizer({
+    AlgoVisualizer({
       canvas: (function () {
         var canvas = document.getElementById("canvas");
 
@@ -180,7 +110,7 @@ function App() {
       />
       {showTooltip && (
         <Tooltip
-          pages={pages}
+          pages={tooltipPages}
           onClose={() => {
             setShowTooltip(false);
           }}
@@ -188,7 +118,11 @@ function App() {
       )}
       <SettingsPanel ref={settingsPanelRef} wasmModule={moduleRef!} />
       <InfoPanel ref={infoPanel1Ref} id="info1panel" type="Stack">
-        <StackView items={currentStack} />
+        <StackView
+          items={currentStack}
+          onUpdate={updateStack}
+          wasmModule={moduleRef!}
+        />
       </InfoPanel>
       <CodePanel ref={codePanelRef}></CodePanel>
       <InfoPanel ref={infoPanel2Ref} id="info2panel" type="Graph" />

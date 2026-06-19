@@ -1,6 +1,5 @@
 
 #ifdef PLATFORM_WEB
-
 #include "utils.h"
 #include "web.hpp"
 #include <stdlib.h>

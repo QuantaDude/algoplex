@@ -7,7 +7,7 @@ export default function Navbar(props: { wasmModule: RefObject<MainModule> }) {
     <>
       <nav className="navbar">
         <div className="navbar-title">
-          <h3>Algo Visualizer</h3>
+          <h3>AlgoPlex</h3>
         </div>
         <div className="navbar-actions">
           <button

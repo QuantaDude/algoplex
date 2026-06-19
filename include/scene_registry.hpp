@@ -1,4 +1,4 @@
-
+#pragma once
 #include <cstdint>
 #include <format>
 #include <sys/types.h>
@@ -9,6 +9,7 @@ enum class SceneType {
 
 enum class AlgorithmId {
   DFS,
+  DFS_A,
   BFS,
   Bubble,
 
@@ -25,8 +26,10 @@ struct AlgorithmInfo {
 };
 
 static const AlgorithmInfo ALGORITHMS[] = {
-    {AlgorithmId::DFS, "dfs", "Depth First Search", SceneType::Graph,
+    {AlgorithmId::DFS, "dfs", "Depth First Search (Basic)", SceneType::Graph,
      "searching, traversal"},
+    {AlgorithmId::DFS_A, "dfs_a", "Depth First Search (Advanced)",
+     SceneType::Graph, "searching, traversal"},
     {AlgorithmId::BFS, "bfs", "Breadth First Search", SceneType::Graph,
      "searching, traversal"},
     {AlgorithmId::Bubble, "bubble_sort", "Bubble Sort", SceneType::Sort,

@@ -1,43 +1,107 @@
-# Algorithm visualizer
+# AlgoPlex
+
+**Making complex algorithms simple.**
+
+AlgoPlex is an interactive algorithm and data structure visualization platform designed to make complex concepts easier to understand through visualization and exploration.
+
+Built with **C++**, **WebAssembly (WASM)**, **Raylib**, **React**, and **TypeScript**, AlgoPlex combines the performance of native rendering with the flexibility of modern web technologies.
+
+The visualization engine runs in C++ and is compiled to WebAssembly, while React and TypeScript power the user interface, providing a responsive and interactive learning experience.
 
 ---
 
-## What is it?
-
-Algo Visualizer is a web app which aims to teach data structures and algorithms in an intuitive and easy to understand manner. It is built using C++, WASM, Raylib, React and TypeScript.
-
-This project combines the high performance C++, WASM code for rendering, and TypeScript and React for the rapid and ease of development of User Interface. Combining the best of both worlds. 
-
-## Algorithms
-
-- [x] DFS
-- [ ] BFS
-- [ ] TSP algorithms
-- [ ] More in the future.
-
 ## Features
 
-- [x] Visualize Tree & Graph scenes.
-- [x] Add and manipulate nodes on the 2D canvas.
-- [x] Add, edit, and remove edges between nodes.
-- [x] Step through the algorithm.
-- [ ] Step through pseudo code and highlight.
-- [ ] Write algorithms at runtime and debug the program.
+- ✅ Visualize graph and tree data structures
+- ✅ Create, edit, and remove nodes directly on the canvas
+- ✅ Create, edit, and remove edges between nodes
+- ✅ Step through algorithm execution
+- ✅ Interactive canvas navigation and manipulation
+- 🚧 Pseudocode highlighting and execution tracking
+- 🚧 Runtime algorithm editing and debugging
+- 🚧 Additional visualizations and learning tools
+
+---
+
+## Supported Algorithms
+
+### Graph Algorithms
+
+- ✅ Depth First Search (DFS)
+- 🚧 Breadth First Search (BFS)
+- 🚧 Traveling Salesman Problem (TSP)
+- 🚧 More coming soon
+
+---
+
+## Technology Stack
+
+### Core Engine
+
+- C++
+- Raylib
+- WebAssembly (Emscripten)
+
+### Frontend
+
+- React
+- TypeScript
+- Vite
+
+---
 
 ## Building
 
-for WASM, set the env variables or source from the shell script,then:
+### Prerequisites
 
+- Node.js
+- npm
+- Emscripten SDK
+- CMake
+
+Ensure your Emscripten environment variables are configured correctly or sourced from your shell setup before building.
+
+### Development Build
+
+```bash
+npm install
+
+emcmake cmake -B build_wasm \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DOPENGL_VERSION="ES 3.0"
+
+cmake --build build_wasm -j$(nproc)
+
+npm run dev
 ```
-# emcmake cmake -B build_wasm -DCMAKE_BUILD_TYPE=Release -DOPENGL_VERSION="ES 3.0"
-# cmake --build build_wasm -j$(nproc)
-# emrun build_wasm/mygame.html
-```
 
-# IMPORTANT!
+---
 
-To ship the app:
-In Cmakelists.txt, set the PRODUCTION_BUILD flag to ON to build a shippable version of your game. This will change the file paths to be relative to your exe (RESOURCES_PATH macro), will remove the console, and also will change the asserts to not allow people to debug them. To make sure the changes take effect I recommend deleting the out folder to make a new clean build!
+## Project Goals
 
-Also, if you read the CMAKE, even if you don't know CMAKE you should understand what happens with the comments there and you can add libraries and also remove the console from there if you need to! (there is a commented line for that!)
+AlgoPlex aims to go beyond static visualizations by exposing the internal state of algorithms as they execute.
+
+Future plans include:
+
+- Algorithm state inspection
+- Call stack visualization
+- Data structure internals
+- Pseudocode synchronization
+- Runtime code execution
+- Additional computer science visualizations
+
+---
+
+## Production Builds
+
+To create a production-ready build, enable the `PRODUCTION_BUILD` option in `CMakeLists.txt`.
+
+Production builds:
+
+- Use deployment-friendly resource paths
+- Disable debugging facilities
+- Optimize build settings for distribution
+- Remove development-specific behavior
+
+After changing this flag, it is recommended to perform a clean build by deleting the build directory and rebuilding the project from scratch.
 

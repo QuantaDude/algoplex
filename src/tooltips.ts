@@ -1,0 +1,108 @@
+import type { RefObject } from "react";
+import { type TooltipPage } from "./components/tooltip/Tooltip";
+
+export interface OnboardingRefs {
+  algoMenuPanelRef: RefObject<HTMLElement>;
+  settingsPanelRef: RefObject<HTMLElement>;
+
+  canvasRef: RefObject<HTMLElement>;
+  codePanelRef: RefObject<HTMLElement>;
+  infoPanel1Ref: RefObject<HTMLElement>;
+}
+
+export function createTooltipPages(ref: OnboardingRefs): TooltipPage[] {
+  const {
+    algoMenuPanelRef,
+    settingsPanelRef,
+    canvasRef,
+    codePanelRef,
+    infoPanel1Ref,
+  } = ref;
+
+  return [
+    {
+      title: "Algorithm List",
+      text: [
+        "This panel contains all the algorithms you can try out in AlgoPlex.",
+        "You can also select the `custom algorithm` to write your own algorithm.",
+      ],
+      newLoc: true,
+      tooltipTarget: algoMenuPanelRef,
+      tooltipPos: { x: 250, y: -100 },
+      arrowRotation: 90,
+      arrowRelDistance: { x: -5, y: 10 },
+    },
+    {
+      title: "Algorithm List",
+      text: [
+        "For now, you may pick one algorithm from the Graph/Tree list.",
+        "Pick one.",
+      ],
+      newLoc: false,
+      tooltipTarget: algoMenuPanelRef,
+      tooltipPos: { x: 250, y: -100 },
+      arrowRotation: 90,
+      arrowRelDistance: { x: -5, y: 10 },
+    },
+    {
+      title: "Controls Panel",
+      text: [
+        "This Panel has all the input modes for the canvas, and settings for the algorithm scene.",
+        "All the controls and settings for the selected algorithm are here.",
+      ],
+      newLoc: true,
+      tooltipTarget: settingsPanelRef,
+      tooltipPos: { x: -700, y: 0 },
+      arrowRotation: -90,
+      arrowRelDistance: { x: 25, y: 10 },
+    },
+
+    {
+      title: "Controls Panel",
+      text: [
+        "Create a few nodes by selecting Node and Create. Then clicking on the canvas to place them.",
+        "To connect them, Select Edge, then right click on a node in the canvas to start drawing an edge.",
+      ],
+      newLoc: false,
+      tooltipTarget: settingsPanelRef,
+      subHighlightTarget: canvasRef,
+      targetCOverride: {
+        right: 1,
+        left: 1,
+        top: 1,
+        bottom: 0,
+        x: 0,
+        y: 0,
+        height: 0,
+        width: 0,
+      },
+      tooltipPos: { x: -200, y: 250 },
+      arrowRotation: 200,
+      arrowRelDistance: { x: 10, y: -3 },
+    },
+    {
+      title: "Code Editor",
+      text: [
+        "This is where the algorithm's code is displayed and then highlighted step wise during execution",
+      ],
+      newLoc: true,
+      tooltipTarget: codePanelRef,
+      tooltipPos: { x: 0, y: -700 },
+      arrowRotation: 0,
+      arrowRelDistance: { x: 10, y: 25 },
+    },
+    {
+      title: "DFS Stack",
+      text: [
+        "This is the stack view.",
+        "Here you will be able to see the nodes which will get pushed into the stack array.",
+      ],
+      newLoc: true,
+      tooltipTarget: infoPanel1Ref,
+      tooltipPos: { x: 200, y: -500 },
+      arrowRotation: 45,
+      arrowRelDistance: { x: -5, y: 20 },
+    },
+  ];
+}
+

@@ -1,9 +1,15 @@
+#pragma once
+#include "app.hpp"
 #include "colors.h"
+#include "debug_panel_fmt.hpp"
+#include "events.hpp"
 #include "raylib.h"
+#include "scene_registry.hpp"
 #include "state.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <stack>
+#include <sys/types.h>
 #include <vector>
 #if defined(PLATFORM_WEB)
 #import <emscripten.h>
@@ -18,16 +24,30 @@ typedef struct {
 namespace AV {
 
 class Scene : public State {
+  AlgorithmId a_id;
 
 public:
-  enum class DFSPhase { ENTER, EXIT };
+  enum class DFSPhase {
+    ENTER,
+    EXIT
+  };
 
-  int VIRTUAL_W= 1920, VIRTUAL_H = 1080;
+  int VIRTUAL_W = 1920, VIRTUAL_H = 1080;
   RenderTexture2D target;
   struct DFSFrame {
-    int node;
+    u_int32_t node;
     DFSPhase phase;
   };
+  inline const char *dfsPhaseToString(DFSPhase phase) {
+    switch (phase) {
+    case DFSPhase::ENTER:
+      return "ENTER";
+    case DFSPhase::EXIT:
+      return "EXIT";
+    default:
+      return "UNKNOWN";
+    }
+  }
   AlgorithmState algorithm_state;
   Camera2D g_camera;
   Vector2 mouse_world_pos;
@@ -93,7 +113,11 @@ public:
 
   void dfs();
   void createStack();
+
   void drawDFSStack(Rectangle);
+
+  int getCurrentAlgoId();
+  const char *getStackJSON();
   void traverse();
 };
 
@@ -106,7 +130,10 @@ extern "C" {
 AV::Scene *EMSCRIPTEN_KEEPALIVE get_scene_ptr();
 void EMSCRIPTEN_KEEPALIVE update_mode(AV::Scene *, int, int);
 void EMSCRIPTEN_KEEPALIVE on_resize();
+const char *EMSCRIPTEN_KEEPALIVE get_stack_json();
+int get_current_algorithm_id();
 void start_algo(AV::Scene *);
 void step_algo(AV::Scene *);
 }
+
 #endif // PLATFORM_WEB

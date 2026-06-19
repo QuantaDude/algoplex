@@ -1,38 +1,36 @@
 
-enum class EventType {
-  Add = 0,
-  Remove = 3,
-  Edit = 6,
-};
-enum class Event {
-  NodeAdd,
-  EdgeAdd,
-  BarAdd,
-
-  NodeRemove,
-  EdgeRemove,
-  BarRemove,
-
-  NodeEdit,
-  EdgeEdit,
-  BarEdit,
-
-  EVENTS_COUNT
+#pragma once
+#include <emscripten/em_asm.h>
+#include <emscripten/emscripten.h>
+#include <limits>
+#include <sys/types.h>
+enum class EventTarget : u_int8_t {
+  Node,
+  Edge,
+  Bar,
+  Stack,
+  Queue,
 };
 
-enum class Target { Node = 0,
-  Edge = 1,
-  Bar = 2 };
+enum class EventAction : u_int8_t {
+  Add,
+  Remove,
+  Edit,
+  AlgoStateUpdate,
+};
 
-EventType getType(Event e) {
-  return static_cast<EventType>((std::to_underlying(e) / 3) * 3);
-}
+struct EventDescriptor {
+  EventAction e_Action;
+  EventTarget e_Target;
 
-Target getTarget(Event e) {
-  return static_cast<Target>(std::to_underlying(e) % 3);
-}
+  u_int32_t e_id = std::numeric_limits<u_int32_t>::max();
 
-static_assert(std::to_underlying(Event::NodeRemove) ==
-              std::to_underlying(EventType::Remove));
-static_assert(std::to_underlying(Event::NodeEdit) ==
-              std::to_underlying(EventType::Edit));
+  EventDescriptor(EventAction e_A, EventTarget e_T,
+                  u_int32_t id = std::numeric_limits<u_int32_t>::max())
+      : e_Action(e_A), e_Target(e_T), e_id(id) {}
+};
+
+EventDescriptor createEvent(EventAction action, EventTarget target,
+                            const char *id = nullptr);
+
+void dispatchSceneEvent(EventDescriptor ed);

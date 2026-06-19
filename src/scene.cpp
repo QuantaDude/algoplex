@@ -1,4 +1,3 @@
-#include "app.hpp"
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
@@ -6,7 +5,9 @@
 #include "state.hpp"
 #include "web.hpp"
 #include <cstdio>
+#include <format>
 #include <iterator>
+#include <sys/types.h>
 #if defined(PLATFORM_WEB)
 #include <emscripten/html5.h>
 
@@ -77,11 +78,17 @@ void start_algo(AV::Scene *scene) {
   // step through the root node
   if (!scene->nodes.empty()) {
     scene->algorithm_state = AV::Running;
-
     scene->traverse();
+    EventDescriptor e(EventAction::AlgoStateUpdate, EventTarget::Stack);
+    dispatchSceneEvent(e);
   }
 }
-void step_algo(AV::Scene *scene) { scene->traverse(); }
+void step_algo(AV::Scene *scene) {
+  scene->traverse();
+
+  EventDescriptor e(EventAction::AlgoStateUpdate, EventTarget::Stack);
+  dispatchSceneEvent(e);
+}
 
 void update_mode(AV::Scene *ptr, int main, int sub) {
 
@@ -96,11 +103,14 @@ void on_resize(void) {
   emscripten_get_canvas_element_size("#canvas", &x, &y);
   SetWindowSize(x, y);
 }
+const char *get_stack_json() { return AV::scene_ptr->getStackJSON(); }
+
+int get_current_algorithm_id() { return AV::scene_ptr->getCurrentAlgoId(); }
 
 AV::Scene::Scene(Font *font)
 
     : algorithm_state(AV::Idle), g_camera({{0}}), m_font(font),
-      m_input_mode(InteractionMode::None) {}
+      m_input_mode(InteractionMode::None), a_id(AlgorithmId::DFS_A) {}
 
 namespace AV {
 Scene *scene_ptr = nullptr;
@@ -741,11 +751,13 @@ void AV::Scene::traverse() {
   DFSFrame frame = dfs_stack.top();
   dfs_stack.pop();
 
-  int current = frame.node;
+  u_int32_t current = frame.node;
 
   if (frame.phase == DFSPhase::ENTER) {
     if (visited[current])
       return;
+    // we should only update the stack if it is not visited
+    //
 
     visited[current] = true;
     hoveredNodeIdx = current;
@@ -754,7 +766,7 @@ void AV::Scene::traverse() {
 
     // Push children in reverse order
     for (int i = nodes[current].edges.size() - 1; i >= 0; --i) {
-      int neighbor = nodes[current].edges[i];
+      u_int32_t neighbor = nodes[current].edges[i];
       if (!visited[neighbor]) {
         dfs_stack.push({neighbor, DFSPhase::ENTER});
       }
@@ -784,3 +796,31 @@ void AV::Scene::drawDFSStack(Rectangle box) {
     y += 22;
   }
 }
+
+const char *AV::Scene::getStackJSON() {
+
+  static std::string result;
+
+  std::stack<DFSFrame> copy = dfs_stack;
+  result.clear();
+
+  auto out = std::back_inserter(result);
+  std::format_to(out, "[");
+
+  bool first = true;
+  while (!copy.empty()) {
+    const DFSFrame &f = copy.top();
+    if (!first)
+      std::format_to(out, ",");
+    std::format_to(out, GET_STACK_FMT(DFS_A), f.node,
+                   dfsPhaseToString(f.phase));
+
+    copy.pop();
+    first = false;
+  }
+
+  std::format_to(out, "]");
+  return result.c_str();
+}
+
+int AV::Scene::getCurrentAlgoId() { return std::to_underlying(a_id); }

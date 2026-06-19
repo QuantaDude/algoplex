@@ -1,6 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { generateEnumsPlugin } from "./scripts/generateEnums.ts";
+import {
+  generateEnumsPlugin,
+  wasmTypesPlugin,
+} from "./scripts/gen-wasm-types.ts";
 import path from "path";
 // https://vite.dev/config/
 export default defineConfig({
@@ -9,6 +12,7 @@ export default defineConfig({
       path.resolve(__dirname, "./include/events.hpp"),
       path.resolve(__dirname, "./include/scene_registry.hpp"),
     ]),
+    wasmTypesPlugin(),
     react(),
   ],
   base: "/algo-visualizer/",

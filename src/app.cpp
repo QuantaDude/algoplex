@@ -1,8 +1,5 @@
-#pragma once
 #include "menu.hpp"
 #include "raylib.h"
-#include "scene.hpp"
-#include "scene_registry.hpp"
 #include "state.hpp"
 #include <cstddef>
 #include <cstdint>
@@ -35,7 +32,7 @@ App *App::createInstance(int width, int height) {
 
     std::string str = std::to_string((int)width);
     print_console(str.c_str());
-    InitWindow(width, height, "Algorithm Visualizer");
+    InitWindow(width, height, "AlgoPlex");
     SetExitKey(KEY_NULL);
     if (IsWindowReady()) {
 

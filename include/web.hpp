@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-EMSCRIPTEN_KEEPALIVE void js_register_algorithms(const char*);
+EMSCRIPTEN_KEEPALIVE void js_register_algorithms(const char *);
 // void toggle_console(void) __attribute__((used))
 // __attribute__((visibility("default")));
 void close_window(void);
