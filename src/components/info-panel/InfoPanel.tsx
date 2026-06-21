@@ -49,7 +49,7 @@ export default function InfoPanel({
                     SetView(0);
                   }}
                 >
-                  Algo State
+                  Adjacency Matrix/List
                 </button>
                 <button
                   type="button"
@@ -58,7 +58,7 @@ export default function InfoPanel({
                     SetView(1);
                   }}
                 >
-                 Adjacency Matrix/List
+                  Algo State
                 </button>{" "}
               </>
             ) : (

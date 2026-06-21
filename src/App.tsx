@@ -13,6 +13,7 @@ import Tooltip, { type TooltipPage } from "./components/tooltip/Tooltip.tsx";
 import StackView from "./components/stackView/StackView.tsx";
 import { createTooltipPages } from "./tooltips.ts";
 import type { DFS_AFrame } from "./types/InfoPanel.ts";
+import AdjacencyMatrix from "./components/adjMatrix/AdjacencyMatrix.tsx";
 
 function App() {
   const [currentStack, setStack] = useState<Array<DFS_AFrame>>([]);
@@ -125,7 +126,9 @@ function App() {
         />
       </InfoPanel>
       <CodePanel ref={codePanelRef}></CodePanel>
-      <InfoPanel ref={infoPanel2Ref} id="info2panel" type="Graph" />
+      <InfoPanel ref={infoPanel2Ref} id="info2panel" type="Graph" >
+      <AdjacencyMatrix wasmModule={moduleRef!}/>
+      </InfoPanel>
     </>
   );
 }

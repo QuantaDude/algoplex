@@ -15,6 +15,6 @@ export default defineConfig({
     wasmTypesPlugin(),
     react(),
   ],
-  base: "/algo-visualizer/",
+  base: "/algoplex/",
 });
 

@@ -271,6 +271,31 @@ body {
   /* padding: 8px 12px; */
   border-top: 1px solid var(--border);
   background: var(--bg);
+  display: flex; /* add this */
+  flex-direction: column; /* add this */
+  overflow: hidden;
+}
+#info2panel .panel {
+  flex: 1; /* fill the parent */
+  min-height: 0; /* critical — flex children don't shrink below content by default */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0; /* remove the 12px margin eating into height */
+}
+#info2panel .info-content {
+  flex: 1;
+  min-height: 0; /* same reason */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* the subsection holding the matrix needs to fill remaining space */
+#info2panel .panel-subsection:last-child {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 #code-panel {
@@ -625,5 +650,57 @@ body {
 }
 .stack-element {
   /* background-color: var(--nord15); */
+}
+
+.adjacency-matrix {
+  display: grid;
+  grid-template-columns: auto repeat(var(--node-count), 1fr);
+  grid-template-rows: auto repeat(var(--node-count), 1fr);
+  overflow: scroll;
+  overflow-y: scroll;
+  height: 100%; /* constrain height so overflow kicks in */
+  /* grid-template-areasc> */
+  /*   "none        node-row      node-row" */
+  /*   "node-column edges-area    edges-area" */
+  /*   "node-column edges-area    edges-area"; */
+}
+
+.matrix-corner {
+}
+
+.matrix-row-label,
+.matrix-col-label {
+  justify-content: center;
+  font-size: 0.75rem;
+  align-items: center;
+  color: var(--nord4);
+  display: flex;
+  position: sticky;
+  top: 0;
+}
+
+.matrix-row-label {
+  top: auto;
+  left: 0;
+}
+.matrix-row-label {
+  top: auto;
+  left: 0;
+  width: auto; /* row label width is auto — just needs to fit the number */
+  padding-right: 6px;
+  background: var(--bg); /* needed so sticky label covers cells behind it */
+}
+
+.matrix-col-label {
+  background: var(--bg); /* same — covers cells when scrolling vertically */
+}
+.matrix-cell {
+  aspect-ratio: 1;
+  border: 1px solid var(--nord3);
+  background: var(--nord1);
+}
+
+.matrix-cell--active {
+  background: var(--nord8);
 }
 

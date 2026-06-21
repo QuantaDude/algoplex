@@ -1,3 +1,4 @@
+#include "events.hpp"
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
@@ -104,6 +105,7 @@ void on_resize(void) {
   SetWindowSize(x, y);
 }
 const char *get_stack_json() { return AV::scene_ptr->getStackJSON(); }
+const char *get_adj_json() { return AV::scene_ptr->getAdjJSON(); }
 
 int get_current_algorithm_id() { return AV::scene_ptr->getCurrentAlgoId(); }
 
@@ -353,6 +355,8 @@ void AV::Scene::input() {
         // selectedNode = &nodes.back();
         selected_node = nodes.end();
         selected_edge_origin = nodes.end();
+
+        dispatchSceneEvent({EventAction::Add, EventTarget::Node, nodes.size()});
       }
     }
     break;
@@ -401,6 +405,10 @@ void AV::Scene::input() {
             edge->from -= 1;
           }
         }
+        dispatchSceneEvent({EventAction::Remove, EventTarget::Node,
+                            static_cast<u_int32_t>(
+                                std::distance(nodes.begin(), selected_node))});
+
         nodes.erase(selected_node);
         selected_node = nodes.end();
         selected_edge_origin = nodes.end();
@@ -424,7 +432,9 @@ void AV::Scene::input() {
             edge->from -= 1;
           }
         }
-
+        dispatchSceneEvent({EventAction::Remove, EventTarget::Node,
+                            static_cast<u_int32_t>(
+                                std::distance(nodes.begin(), selected_node))});
         nodes.erase(selected_node);
         selected_node = nodes.end();
         selected_edge_origin = nodes.end();
@@ -463,6 +473,9 @@ void AV::Scene::input() {
               // Also add to node's edge list
               nodes[newEdge.from].edges.push_back(newEdge.to);
               nodes[newEdge.to].edges.push_back(newEdge.from);
+
+              dispatchSceneEvent(
+                  {EventAction::Add, EventTarget::Node, newEdge.from});
             }
 
             selected_edge_origin = nodes.end();
@@ -490,6 +503,10 @@ void AV::Scene::input() {
           it += i;
           edges.erase(it);
           hoveredEdgeIdx = SIZE_MAX;
+          dispatchSceneEvent(
+              {EventAction::Add, EventTarget::Node,
+               static_cast<u_int32_t>(std::distance(nodes.begin(), selected_edge_origin))});
+
           return;
         }
       }
@@ -817,6 +834,41 @@ const char *AV::Scene::getStackJSON() {
 
     copy.pop();
     first = false;
+  }
+
+  std::format_to(out, "]");
+  return result.c_str();
+}
+
+const char *AV::Scene::getAdjJSON() {
+  static std::string result;
+  result.clear();
+
+  auto out = std::back_inserter(result);
+  std::format_to(out, "[");
+
+  bool firstNode = true;
+  int i = 0;
+  for (const auto &node : nodes) {
+    if (!firstNode)
+      std::format_to(out, ",");
+
+    // build edges string first
+    std::string edges;
+    auto edgeOut = std::back_inserter(edges);
+    bool firstEdge = true;
+    for (int edge : node.edges) {
+      if (!firstEdge)
+        std::format_to(edgeOut, ",");
+      std::format_to(edgeOut, "{}", edge);
+      firstEdge = false;
+    }
+
+    // now all variables are ready — single format_to call per node
+    std::format_to(out, GET_ADJ_MAT_FMT(DFS_A), i, edges);
+
+    i++;
+    firstNode = false;
   }
 
   std::format_to(out, "]");

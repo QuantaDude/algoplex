@@ -55,11 +55,6 @@ public:
 
   // void GuiAlgoViz(BaseGuiState *state);
 
-  static void Button006();
-  static void StopButton(Scene *);
-  static void StartButton(Scene *);
-  static void StepButton(Scene *);
-  static void Button015();
   enum class InteractionMode {
     None = 0, // can hover and delete
     NodeSelect = 1,
@@ -118,6 +113,8 @@ public:
 
   int getCurrentAlgoId();
   const char *getStackJSON();
+  const char *getAdjJSON();
+
   void traverse();
 };
 
@@ -131,6 +128,7 @@ AV::Scene *EMSCRIPTEN_KEEPALIVE get_scene_ptr();
 void EMSCRIPTEN_KEEPALIVE update_mode(AV::Scene *, int, int);
 void EMSCRIPTEN_KEEPALIVE on_resize();
 const char *EMSCRIPTEN_KEEPALIVE get_stack_json();
+const char *EMSCRIPTEN_KEEPALIVE get_adj_json();
 int get_current_algorithm_id();
 void start_algo(AV::Scene *);
 void step_algo(AV::Scene *);

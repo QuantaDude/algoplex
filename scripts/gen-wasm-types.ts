@@ -128,7 +128,54 @@ const C_TO_TS: Record<string, string> = {
   bool: "boolean",
 };
 
-function generateStackTypes(root: string): void {
+// Maps annotation tag → interface name suffix
+// // @stack          DFS_A  node:int  →  DFS_AStackFrame
+// // @AdjacencyMatrix DFS_A node:int  →  DFS_AAdjMatFrame
+const TAG_TO_SUFFIX: Record<string, string> = {
+  stack: "Stack",
+  adjacencymatrix: "AdjMat",
+};
+
+interface ParsedInterface {
+  name: string; // e.g. DFS_AStackFrame
+  fields: string; // indented TS field lines
+}
+
+function parseAnnotations(src: string): ParsedInterface[] {
+  // Match any // @<tag> line, case-insensitive tag
+  const tagPattern = /^\/\/\s*@(\w+)\s+(\S+)\s*(.*)/;
+
+  return src.split("\n").flatMap((line): ParsedInterface[] => {
+    const m = line.trim().match(tagPattern);
+    if (!m) return [];
+
+    const [, tag, algoName, rest] = m;
+    const suffix = TAG_TO_SUFFIX[tag.toLowerCase()];
+    if (!suffix) return []; // unknown tag — skip
+
+    const fields = rest
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((token) => {
+        const [fieldName, cType] = token.split(":");
+        // strip [] suffix for array types — just map the base type
+        const baseType = C_TO_TS[cType?.replace("[]", "")] ?? "unknown";
+        const tsType = cType?.endsWith("[]") ? `${baseType}[]` : baseType;
+        return `    ${fieldName}: ${tsType};`;
+      })
+      .join("\n");
+
+    return [
+      {
+        name: `${algoName}${suffix}Frame`,
+        fields,
+      },
+    ];
+  });
+}
+
+function generateInfoPanelTypes(root: string): void {
   const headerAbs = path.resolve(root, HEADER_PATH);
   const outputAbs = path.resolve(root, OUTPUT_PATH);
 
@@ -138,32 +185,16 @@ function generateStackTypes(root: string): void {
   }
 
   const src = fs.readFileSync(headerAbs, "utf8");
+  const parsed = parseAnnotations(src);
 
-  const interfaces = src
-    .split("\n")
-    .filter((l) => l.includes("@stack"))
-    .map((line) => {
-      // // @stack DFS_ADVANCED node:uint32 phase:string depth:uint32
-      const clean = line.trim().replace(/^\/\/\s*@stack\s*/, "");
-      const [name, ...tokens] = clean.trim().split(/\s+/);
-
-      const fields = tokens
-        .filter(Boolean)
-        .map((token) => {
-          const [fieldName, cType] = token.split(":");
-          const tsType = C_TO_TS[cType] ?? "unknown";
-          return `    ${fieldName}: ${tsType};`;
-        })
-        .join("\n");
-
-      return `export interface ${name}Frame {\n${fields}\n}`;
-    })
-    .join("\n\n");
-
-  if (!interfaces) {
-    console.warn(`[wasm-types] no @stack annotations found in ${HEADER_PATH}`);
+  if (parsed.length === 0) {
+    console.warn(`[wasm-types] no known annotations found in ${HEADER_PATH}`);
     return;
   }
+
+  const interfaces = parsed
+    .map(({ name, fields }) => `export interface ${name} {\n${fields}\n}`)
+    .join("\n\n");
 
   const output =
     `// AUTO-GENERATED — do not edit manually\n` +
@@ -183,7 +214,7 @@ export function wasmTypesPlugin(): Plugin {
 
     configResolved(config) {
       root = config.root;
-      generateStackTypes(root);
+      generateInfoPanelTypes(root);
     },
 
     configureServer(server) {
@@ -191,14 +222,14 @@ export function wasmTypesPlugin(): Plugin {
       server.watcher.add(headerAbs);
       server.watcher.on("change", (file) => {
         if (file === headerAbs) {
-          generateStackTypes(root);
+          generateInfoPanelTypes(root);
           server.watcher.emit("change", path.resolve(root, OUTPUT_PATH));
         }
       });
     },
 
     buildStart() {
-      generateStackTypes(root);
+      generateInfoPanelTypes(root);
     },
   };
 }
