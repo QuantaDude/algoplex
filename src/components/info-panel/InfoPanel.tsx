@@ -20,7 +20,7 @@ export default function InfoPanel({
           <h3>{type} View</h3>
         </div>
         <div className="info-content">
-          <div className="panel-subsection tab-bar">
+          <div className="tab-bar">
             {type == "Stack" ? (
               <>
                 <button

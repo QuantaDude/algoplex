@@ -356,7 +356,8 @@ void AV::Scene::input() {
         selected_node = nodes.end();
         selected_edge_origin = nodes.end();
 
-        dispatchSceneEvent({EventAction::Add, EventTarget::Node, nodes.size()});
+        dispatchSceneEvent(
+            {EventAction::Add, EventTarget::Node, nodes.size() - 1});
       }
     }
     break;
@@ -405,13 +406,14 @@ void AV::Scene::input() {
             edge->from -= 1;
           }
         }
-        dispatchSceneEvent({EventAction::Remove, EventTarget::Node,
-                            static_cast<u_int32_t>(
-                                std::distance(nodes.begin(), selected_node))});
 
         nodes.erase(selected_node);
         selected_node = nodes.end();
         selected_edge_origin = nodes.end();
+        dispatchSceneEvent(
+            {EventAction::Remove, EventTarget::Node,
+             static_cast<u_int32_t>(
+                 std::distance(nodes.begin(), selected_node) - 1)});
       }
     }
     break;
@@ -432,12 +434,13 @@ void AV::Scene::input() {
             edge->from -= 1;
           }
         }
-        dispatchSceneEvent({EventAction::Remove, EventTarget::Node,
-                            static_cast<u_int32_t>(
-                                std::distance(nodes.begin(), selected_node))});
         nodes.erase(selected_node);
         selected_node = nodes.end();
         selected_edge_origin = nodes.end();
+        dispatchSceneEvent(
+            {EventAction::Remove, EventTarget::Node,
+             static_cast<u_int32_t>(
+                 std::distance(nodes.begin(), selected_node) - 1)});
       }
     }
 
@@ -475,7 +478,7 @@ void AV::Scene::input() {
               nodes[newEdge.to].edges.push_back(newEdge.from);
 
               dispatchSceneEvent(
-                  {EventAction::Add, EventTarget::Node, newEdge.from});
+                  {EventAction::Add, EventTarget::Edge, newEdge.from});
             }
 
             selected_edge_origin = nodes.end();
@@ -503,9 +506,9 @@ void AV::Scene::input() {
           it += i;
           edges.erase(it);
           hoveredEdgeIdx = SIZE_MAX;
-          dispatchSceneEvent(
-              {EventAction::Add, EventTarget::Node,
-               static_cast<u_int32_t>(std::distance(nodes.begin(), selected_edge_origin))});
+          dispatchSceneEvent({EventAction::Add, EventTarget::Node,
+                              static_cast<u_int32_t>(std::distance(
+                                  nodes.begin(), selected_edge_origin))});
 
           return;
         }
@@ -673,6 +676,9 @@ void AV::Scene::input() {
         root = &nodes[0];
         selected_node = nodes.end() - 1;
         selected_edge_origin = nodes.end();
+
+        dispatchSceneEvent(
+            {EventAction::Add, EventTarget::Node, nodes.size() - 1});
       }
     }
 
