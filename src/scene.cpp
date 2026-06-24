@@ -124,6 +124,8 @@ void AV::Scene::init() {
 
   IVector2 *resolution = App::getInstance().getResolution();
   Node newNode;
+  newNode.id = 0;
+
   newNode.radius = 15;
 
   newNode.pos = {g_camera.target.x + (float)(resolution->x / 2),
@@ -137,8 +139,8 @@ void AV::Scene::init() {
   nodes.push_back(newNode);
   selected_node = nodes.end();
   selected_edge_origin = nodes.end();
-  root = &nodes[0];
-  g_camera.zoom = 1.0f;
+  root_id = nodes[0].id;
+  g_camera.zoom = 1.5f;
 
   SetWindowSize(resolution->x, resolution->y);
   // SetMouseScale(resolution->x / 300.0f, resolution->y / 150.0f);
@@ -157,7 +159,8 @@ void AV::Scene::draw(IVector2 *resolution) {
 
   for (size_t i = 0; i < edges.size(); i++) {
     Color col = (i == hoveredEdgeIdx) ? COLOR_PATH : COLOR_EDGE;
-    DrawLineEx(nodes[edges[i].from].pos, nodes[edges[i].to].pos, 3, col);
+    DrawLineEx(nodes[id_to_node_idx[edges[i].from]].pos,
+               nodes[id_to_node_idx[edges[i].to]].pos, 3, col);
   }
   if (selected_edge_origin != nodes.end()) {
     DrawLineEx(selected_edge_origin->pos,
@@ -168,11 +171,11 @@ void AV::Scene::draw(IVector2 *resolution) {
     DrawCircleV(nodes[i].pos, nodes[i].radius,
                 hoveredNodeIdx == i                    ? COLOR_VISITED
                 : (selected_node == nodes.begin() + i) ? NORD10
-                : (root == &nodes[i])                  ? NORD13
+                : (root_id == nodes[i].id)                  ? NORD13
                                                        : COLOR_NODE);
 
     char idText[10];
-    sprintf(idText, "%d", (int)i);
+    sprintf(idText, "%d", (int)nodes[i].id);
     Vector2 textSize = MeasureTextEx(*m_font, idText, 20, 1);
     // DrawText(idText, nodes[i].pos.x - textSize.x / 2,
     //        nodes[i].pos.y - textSize.y / 2, 20, WHITE);
@@ -342,6 +345,11 @@ void AV::Scene::input() {
       // create new node
       if (selected_node == nodes.end() && selected_edge_origin == nodes.end()) {
         Node newNode;
+        if (nodes.begin() != nodes.end()) {
+          newNode.id = (nodes.end() - 1)->id + 1;
+        } else {
+          newNode.id = 0;
+        }
         Vector2 mouseWorld = GetScreenToWorld2D(GetMousePosition(), g_camera);
         newNode.pos = mouseWorld;
         // newNode.oldPos = mouseWorld;
@@ -352,6 +360,8 @@ void AV::Scene::input() {
         newNode.data = nodes.size();
 
         nodes.push_back(newNode);
+
+        id_to_node_idx[newNode.id] = nodes.size() - 1;
         // selectedNode = &nodes.back();
         selected_node = nodes.end();
         selected_edge_origin = nodes.end();
@@ -393,21 +403,30 @@ void AV::Scene::input() {
     }
     if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_DELETE)) {
       if (selected_node != nodes.end() && nodes.begin() != nodes.end()) {
+
         for (std::vector<Edge>::iterator edge = edges.begin();
-             edge < edges.end(); edge++) {
-          if (edge->from == (size_t)(selected_node - nodes.begin()) ||
-              edge->to == (size_t)(selected_node - nodes.begin())) {
+             edge < edges.end();) {
+
+          if (edge->from == selected_node->id ||
+              edge->to == selected_node->id) {
+
+            std::erase(nodes[id_to_node_idx[edge->from]].edges, edge->to);
+            std::erase(nodes[id_to_node_idx[edge->to]].edges, edge->from);
+            std::erase(selected_node->edges, edge->from);
+            std::erase(selected_node->edges, edge->to);
+
             edges.erase(edge);
-          }
-          if (edge->to > (size_t)(selected_node - nodes.begin())) {
-            edge->to -= 1;
-          }
-          if (edge->from > (size_t)(selected_node - nodes.begin())) {
-            edge->from -= 1;
+          } else {
+            ++edge;
           }
         }
 
         nodes.erase(selected_node);
+        id_to_node_idx.clear();
+
+        for (size_t i = 0; i < nodes.size(); i++) {
+          id_to_node_idx[nodes[i].id] = i;
+        }
         selected_node = nodes.end();
         selected_edge_origin = nodes.end();
         dispatchSceneEvent(
@@ -420,21 +439,32 @@ void AV::Scene::input() {
   case InteractionMode::NodeEdit:
     if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_DELETE)) {
       if (selected_node != nodes.end() && nodes.begin() != nodes.end()) {
+        std::vector<u_int32_t> node_idx;
         for (std::vector<Edge>::iterator edge = edges.begin();
-             edge < edges.end(); edge++) {
+             edge < edges.end();) {
 
-          if (edge->from == (size_t)(selected_node - nodes.begin()) ||
-              edge->to == (size_t)(selected_node - nodes.begin())) {
+          // find all nodes which connect to this edge and delete them from the
+          // node struct
+
+          if (edge->from == selected_node->id ||
+              edge->to == selected_node->id) {
+
+            std::erase(selected_node->edges, edge->from);
+
+            std::erase(nodes[id_to_node_idx[edge->from]].edges, edge->to);
+            std::erase(nodes[id_to_node_idx[edge->to]].edges, edge->from);
+
+            std::erase(selected_node->edges, edge->to);
             edges.erase(edge);
-          }
-          if (edge->to > (size_t)(selected_node - nodes.begin())) {
-            edge->to -= 1;
-          }
-          if (edge->from > (size_t)(selected_node - nodes.begin())) {
-            edge->from -= 1;
+          } else {
+
+            ++edge;
           }
         }
         nodes.erase(selected_node);
+        for (size_t i = 0; i < nodes.size(); i++) {
+          id_to_node_idx[nodes[i].id] = i;
+        }
         selected_node = nodes.end();
         selected_edge_origin = nodes.end();
         dispatchSceneEvent(
@@ -459,8 +489,8 @@ void AV::Scene::input() {
                      selected_edge_origin != nodes.begin() + i) {
 
             Edge newEdge;
-            newEdge.from = selected_edge_origin - nodes.begin();
-            newEdge.to = i;
+            newEdge.from = (selected_edge_origin)->id;
+            newEdge.to = nodes[i].id;
 
             bool edgeExists = false;
             for (const auto &edge : edges) {
@@ -474,8 +504,10 @@ void AV::Scene::input() {
               edges.push_back(newEdge);
 
               // Also add to node's edge list
-              nodes[newEdge.from].edges.push_back(newEdge.to);
-              nodes[newEdge.to].edges.push_back(newEdge.from);
+              selected_edge_origin->edges.push_back(newEdge.to);
+              // nodes[newEdge.from].edges.push_back(newEdge.to);
+              // nodes[newEdge.to].edges.push_back(newEdge.from);
+              nodes[i].edges.push_back(newEdge.from);
 
               dispatchSceneEvent(
                   {EventAction::Add, EventTarget::Edge, newEdge.from});
@@ -506,9 +538,6 @@ void AV::Scene::input() {
           it += i;
           edges.erase(it);
           hoveredEdgeIdx = SIZE_MAX;
-          dispatchSceneEvent({EventAction::Add, EventTarget::Node,
-                              static_cast<u_int32_t>(std::distance(
-                                  nodes.begin(), selected_edge_origin))});
 
           return;
         }
@@ -528,6 +557,11 @@ void AV::Scene::input() {
 
             nodes[newEdge.from].edges.push_back(newEdge.to);
             nodes[newEdge.to].edges.push_back(newEdge.from);
+
+            dispatchSceneEvent({EventAction::Add, EventTarget::Node,
+                                static_cast<u_int32_t>(std::distance(
+                                    nodes.begin(), selected_edge_origin))});
+
             selected_edge_origin = nodes.end();
           }
         }
@@ -663,6 +697,12 @@ void AV::Scene::input() {
       set_mode(main_mode, sub_mode);
       if (selected_node == nodes.end() && selected_edge_origin == nodes.end()) {
         Node newNode;
+        if (nodes.begin() != nodes.end()) {
+          newNode.id = (nodes.end() - 1)->id + 1;
+        } else {
+          newNode.id = 0;
+        }
+
         Vector2 mouseWorld = GetScreenToWorld2D(GetMousePosition(), g_camera);
         newNode.pos = mouseWorld;
         newNode.oldPos = mouseWorld;
@@ -673,7 +713,9 @@ void AV::Scene::input() {
         newNode.data = nodes.size();
 
         nodes.push_back(newNode);
-        root = &nodes[0];
+
+        id_to_node_idx[newNode.id] = nodes.size() - 1;
+        root_id = nodes[0].id;
         selected_node = nodes.end() - 1;
         selected_edge_origin = nodes.end();
 
@@ -871,7 +913,7 @@ const char *AV::Scene::getAdjJSON() {
     }
 
     // now all variables are ready — single format_to call per node
-    std::format_to(out, GET_ADJ_MAT_FMT(DFS_A), i, edges);
+    std::format_to(out, GET_ADJ_MAT_FMT(DFS_A), node.id, edges);
 
     i++;
     firstNode = false;

@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <stack>
 #include <sys/types.h>
+#include <unordered_map>
 #include <vector>
 #if defined(PLATFORM_WEB)
 #import <emscripten.h>
@@ -75,6 +76,8 @@ public:
   };
 
   struct Node {
+    u_int32_t id;
+
     Vector2 pos;
     Vector2 oldPos;
     uint16_t radius;
@@ -84,15 +87,21 @@ public:
     std::vector<int> edges;
   };
 
-  Node *root;
-  // allocate array of nodes
+  // Node *root;
+  u_int32_t root_id;
+  std::unordered_map<u_int32_t, size_t> id_to_node_idx;
   std::vector<Node> nodes;
   std::vector<Edge> edges;
+
   std::stack<DFSFrame> dfs_stack;
+
   std::vector<bool> visited;
 
+
+  //NOTE: Refactor these iterators to ids
   std::vector<Node>::iterator selected_node;
   std::vector<Node>::iterator selected_edge_origin;
+
   size_t hoveredEdgeIdx = SIZE_MAX;
   size_t hoveredNodeIdx = SIZE_MAX;
 

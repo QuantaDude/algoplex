@@ -29,6 +29,7 @@ export default function AdjacencyMatrix({
             const json = wasmModule.current.UTF8ToString(ptr);
 
             const nodes: DFS_AAdjMatFrame[] = JSON.parse(json);
+            console.log(nodes);
             setNodes(nodes);
             break;
           default:
@@ -43,10 +44,14 @@ export default function AdjacencyMatrix({
     return () =>
       window.removeEventListener("scene_event", handler as EventListener);
   }, []);
-  function hasEdge(node1: number, node2: number) {
-    if (nodes[node1].edges.includes(node2)) return true;
-    else if (nodes[node2].edges.includes(node1)) return true;
-    else return false;
+  function hasEdge(node1: DFS_AAdjMatFrame, node2: DFS_AAdjMatFrame) {
+
+    if(node2.edges.includes(node1.node)) return true;
+    else if(node1.edges.includes(node2.node)) return true;
+        else return false;
+  // ic> (nodes[node1].edges.includes(node2)) return true;
+  // else if (nodes[node2].edges.includes(node1)) return true;
+  // else return false;
   }
   return (
     <div
@@ -60,16 +65,14 @@ export default function AdjacencyMatrix({
           {node.node}
         </div>
       ))}
-      {nodes.map((row) => (
+      {nodes.map((row, r_idx) => (
         <Fragment key={`${row.node}-row`}>
-          <div className="matrix-row-label" >
-            {row.node}
-          </div>
+          <div className="matrix-row-label">{row.node}</div>
 
-          {nodes.map((col) => (
+          {nodes.map((col, c_idx) => (
             <div
               key={`${row.node}-${col.node}-edge`}
-              className={`matrix-cell ${hasEdge(row.node, col.node) ? "matrix-cell--active" : ""}`}
+              className={`matrix-cell ${hasEdge(row, col) ? "matrix-cell--active" : ""}`}
             ></div>
           ))}
         </Fragment>
