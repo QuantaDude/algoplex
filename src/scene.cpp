@@ -67,24 +67,28 @@ Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
 }
 
 void start_algo(AV::Scene *scene) {
+  scene->algorithm_state = AV::Running;
   while (!scene->dfs_stack.empty())
     scene->dfs_stack.pop();
 
   scene->visited.assign(scene->nodes.size(), false);
 
   if (!scene->nodes.empty()) {
-    scene->dfs_stack.push({0, AV::Scene::DFSPhase::ENTER}); // root
-  }
+    scene->dfs_stack.push({scene->root_id, AV::Scene::DFSPhase::ENTER}); // root
 
-  // step through the root node
-  if (!scene->nodes.empty()) {
-    scene->algorithm_state = AV::Running;
-    scene->traverse();
     EventDescriptor e(EventAction::AlgoStateUpdate, EventTarget::Stack);
     dispatchSceneEvent(e);
   }
+
+  // step through the root node
+  // ic> (!scene->nodes.empty()) {
+  //   scene->algorithm_state = AV::Running;
+  //   scene->traverse();
+  //
+  // }
 }
 void step_algo(AV::Scene *scene) {
+  scene->algorithm_state = AV::Stepping;
   scene->traverse();
 
   EventDescriptor e(EventAction::AlgoStateUpdate, EventTarget::Stack);
@@ -169,9 +173,9 @@ void AV::Scene::draw(IVector2 *resolution) {
 
   for (size_t i = 0; i < nodes.size(); i++) {
     DrawCircleV(nodes[i].pos, nodes[i].radius,
-                hoveredNodeIdx == i                    ? COLOR_VISITED
+                hoveredNodeIdx == nodes[i].id          ? COLOR_VISITED
                 : (selected_node == nodes.begin() + i) ? NORD10
-                : (root_id == nodes[i].id)                  ? NORD13
+                : (root_id == nodes[i].id)             ? NORD13
                                                        : COLOR_NODE);
 
     char idText[10];
@@ -689,7 +693,7 @@ void AV::Scene::input() {
     selected_node = nodes.end();
     selected_edge_origin = nodes.end();
   }
-  if (algorithm_state == AV::Idle) {
+  if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
     if (IsKeyPressed(KEY_A)) {
       m_input_mode = InteractionMode::NodeCreate;
       main_mode = 1;
@@ -810,8 +814,10 @@ void AV::Scene::update() {
 }
 
 void AV::Scene::traverse() {
-  if (dfs_stack.empty())
+  if (dfs_stack.empty()) {
+    algorithm_state = AV::Done;
     return;
+  }
 
   DFSFrame frame = dfs_stack.top();
   dfs_stack.pop();
@@ -830,8 +836,8 @@ void AV::Scene::traverse() {
     dfs_stack.push({current, DFSPhase::EXIT});
 
     // Push children in reverse order
-    for (int i = nodes[current].edges.size() - 1; i >= 0; --i) {
-      u_int32_t neighbor = nodes[current].edges[i];
+    for (int i = nodes[id_to_node_idx[current]].edges.size() - 1; i >= 0; --i) {
+      u_int32_t neighbor = nodes[id_to_node_idx[current]].edges[i];
       if (!visited[neighbor]) {
         dfs_stack.push({neighbor, DFSPhase::ENTER});
       }
