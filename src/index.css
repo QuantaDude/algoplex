@@ -520,6 +520,8 @@ body {
   box-shadow: 0px 17px 30px 20px rgb(from var(--nord0) r g b / 0.5);
   transition: box-shadow 0.3s ease-in-out;
   opacity: 0;
+
+  z-index: 1001;
   animation:
     tooltip-opacity 1s ease forwards,
     tooltip-nudge 3.6s ease-in-out infinite 1s,
@@ -713,3 +715,4 @@ body {
 .matrix-cell--active {
   background: var(--nord8);
 }
+

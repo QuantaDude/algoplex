@@ -111,20 +111,25 @@ void set_node_val(u_int32_t node_id, int value) {
 void set_hover_state(bool hover, u_int32_t node_id) {
   //if hover is being set as false, go to the old pos.
 
-  AV::scene_ptr->moveCamera = hover;
   if (!hover) {
 
+    AV::scene_ptr->moveCamera = hover;
     AV::scene_ptr->g_camera.offset = AV::scene_ptr->camera_old_offset;
     AV::scene_ptr->g_camera.target = AV::scene_ptr->camera_old_target;
     AV::scene_ptr->g_camera.zoom = AV::scene_ptr->camera_old_zoom;
   } else {
 
     AV::scene_ptr->hoveredNodeIdx = AV::scene_ptr->id_to_node_idx[node_id];
+    //basically check if mouse just moved over another div/element without setting hover to false in between. This is a temp workaround to what I am trying to do.
+    if (AV::scene_ptr->moveCamera == false) {
 
-    AV::scene_ptr->camera_old_offset = AV::scene_ptr->g_camera.offset;
+      AV::scene_ptr->camera_old_offset = AV::scene_ptr->g_camera.offset;
 
-    AV::scene_ptr->camera_old_target = AV::scene_ptr->g_camera.target;
-    AV::scene_ptr->camera_old_zoom = AV::scene_ptr->g_camera.zoom;
+      AV::scene_ptr->camera_old_target = AV::scene_ptr->g_camera.target;
+      AV::scene_ptr->camera_old_zoom = AV::scene_ptr->g_camera.zoom;
+    }
+
+    AV::scene_ptr->moveCamera = hover;
   }
 }
 int get_current_algorithm_id() { return AV::scene_ptr->getCurrentAlgoId(); }

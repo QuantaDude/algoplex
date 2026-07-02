@@ -86,7 +86,7 @@ export default function SettingsPanel({
       ref={ref}
       className="right panel"
       onClick={(e: MouseEvent) => {
-        if (!checkClickPos(e.clientX, e.clientY)) setNodeListVisibility(false);
+        if (!checkClickPos(e.clientX, e.clientY)) {setNodeListVisibility(false); wasmModule.current._set_hover_state(false, 0)}
       }}
     >
       <div className="title">
