@@ -35,6 +35,8 @@ public:
 
   int VIRTUAL_W = 1920, VIRTUAL_H = 1080;
   RenderTexture2D target;
+  bool update_res = false;
+  bool show_key_overlay = true;
   struct DFSFrame {
     u_int32_t node;
     DFSPhase phase;
@@ -51,6 +53,9 @@ public:
   }
   AlgorithmState algorithm_state;
   Camera2D g_camera;
+  Vector2 camera_old_offset;
+  float camera_old_zoom;
+  Vector2 camera_old_target;
   Vector2 mouse_world_pos;
   Font *m_font;
 
@@ -97,11 +102,11 @@ public:
 
   std::vector<bool> visited;
 
-
   //NOTE: Refactor these iterators to ids
   std::vector<Node>::iterator selected_node;
   std::vector<Node>::iterator selected_edge_origin;
 
+  bool moveCamera = false;
   size_t hoveredEdgeIdx = SIZE_MAX;
   size_t hoveredNodeIdx = SIZE_MAX;
 
@@ -111,18 +116,26 @@ public:
   void update_input_mode();
   void draw(IVector2 *) override;
   void drawUI(IVector2);
-  void update() override;
+  void update(IVector2 *resolution) override;
   bool IsMouseHoveringEdge(const Vector2 &, const Vector2 &, const Vector2 &,
                            float thickness = 5.0f);
 
   void dfs();
   void createStack();
 
-  void drawDFSStack(Rectangle);
-
+  void resetScene();
+  //updates the camera position when the mouse is hovring over an UI element
+  void gotoNode(IVector2 *resolution);
   int getCurrentAlgoId();
+
+  void ToggleKeybindOverlay();
+  void setRootNode(u_int32_t);
+  void setNodeVal(u_int32_t, int);
+
   const char *getStackJSON();
   const char *getAdjJSON();
+  const char *getNodeListJSON();
+  const char *getRootNodeJSON();
 
   void traverse();
 };
@@ -134,10 +147,18 @@ extern AV::Scene *scene_ptr;
 
 extern "C" {
 AV::Scene *EMSCRIPTEN_KEEPALIVE get_scene_ptr();
+void EMSCRIPTEN_KEEPALIVE reset_scene();
+void EMSCRIPTEN_KEEPALIVE toggle_keybind_overlay();
 void EMSCRIPTEN_KEEPALIVE update_mode(AV::Scene *, int, int);
 void EMSCRIPTEN_KEEPALIVE on_resize();
+void EMSCRIPTEN_KEEPALIVE set_root_node(u_int32_t);
+void EMSCRIPTEN_KEEPALIVE set_node_val(u_int32_t, int);
+void EMSCRIPTEN_KEEPALIVE set_hover_state(bool, u_int32_t);
 const char *EMSCRIPTEN_KEEPALIVE get_stack_json();
 const char *EMSCRIPTEN_KEEPALIVE get_adj_json();
+const char *EMSCRIPTEN_KEEPALIVE get_node_list_json();
+const char *EMSCRIPTEN_KEEPALIVE get_root_node_json();
+
 int get_current_algorithm_id();
 void start_algo(AV::Scene *);
 void step_algo(AV::Scene *);

@@ -9,9 +9,9 @@ int main() {
   int width{1920}, height{1080};
 
 #if defined(PLATFORM_WEB)
-  emscripten_get_canvas_element_size("#canvas", &width, &height);
-  // std::string str = std::to_string((int)width);
-  // print_console(str.c_str());
+  // emscripten_get_canvas_element_size("#canvas", &width, &height);
+  //std::string str = std::to_string((int)width);
+  //print_console(str.c_str());
 #endif
 
   App *instance = App::createInstance(width, height);

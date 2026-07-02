@@ -134,6 +134,8 @@ const C_TO_TS: Record<string, string> = {
 const TAG_TO_SUFFIX: Record<string, string> = {
   stack: "Stack",
   adjacencymatrix: "AdjMat",
+  nodelist: "NodeList",
+  nodeeditinfo: "NodeEditInfo"
 };
 
 interface ParsedInterface {

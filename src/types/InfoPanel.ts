@@ -14,3 +14,8 @@ export interface DFS_AAdjMatFrame {
     node: number;
     edges: number[];
 }
+
+export interface GraphNodeListFrame {
+    node: number;
+    data: number;
+}

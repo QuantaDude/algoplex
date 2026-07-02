@@ -1,4 +1,11 @@
-import { Fragment, useEffect, useState, type RefObject } from "react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type RefObject,
+} from "react";
 import type { DFS_AAdjMatFrame } from "../../types/InfoPanel";
 import type { EventDescriptor } from "../../types/EventDescriptor";
 import { EventAction, EventTarget } from "../../types/events";
@@ -11,6 +18,7 @@ export default function AdjacencyMatrix({
 }) {
   const [nodes, setNodes] = useState<DFS_AAdjMatFrame[]>([]);
 
+  const hoverStateChanged = useRef(false);
   useEffect(() => {
     const handler = (e: CustomEvent) => {
       console.log(e.detail);
@@ -45,23 +53,40 @@ export default function AdjacencyMatrix({
       window.removeEventListener("scene_event", handler as EventListener);
   }, []);
   function hasEdge(node1: DFS_AAdjMatFrame, node2: DFS_AAdjMatFrame) {
-
-    if(node2.edges.includes(node1.node)) return true;
-    else if(node1.edges.includes(node2.node)) return true;
-        else return false;
-  // ic> (nodes[node1].edges.includes(node2)) return true;
-  // else if (nodes[node2].edges.includes(node1)) return true;
-  // else return false;
+    if (node2.edges.includes(node1.node)) return true;
+    else if (node1.edges.includes(node2.node)) return true;
+    else return false;
+    // ic> (nodes[node1].edges.includes(node2)) return true;
+    // else if (nodes[node2].edges.includes(node1)) return true;
+    // else return false;
   }
   return (
     <div
       className="adjacency-matrix"
       style={{ "--node-count": nodes.length } as React.CSSProperties}
+      onMouseLeave={(e: MouseEvent) => {
+        /*not mandatory to set hover state to false*/
+        if (hoverStateChanged.current) {
+          wasmModule.current._set_hover_state(false, 0);
+        }
+      }}
     >
       <div className="matrix-corner" />
 
       {nodes.map((node) => (
-        <div className="matrix-col-label" key={`${node.node}-col`}>
+        <div
+          className="matrix-col-label"
+          key={`${node.node}-col`}
+          onMouseEnter={(e: MouseEvent) => {
+            wasmModule.current._set_hover_state(true, node.node);
+            hoverStateChanged.current = true;
+          }}
+          onClick={() => {
+            //basically we want the position to stay after moving out of the div if we click on it.
+//NOTE: I have to create a specific funcction that permanently sets the camera pos.
+            hoverStateChanged.current = false;
+          }}
+        >
           {node.node}
         </div>
       ))}

@@ -26,12 +26,14 @@ App *App::createInstance(int width, int height) {
     // }
     // list_files();
 
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-
-    emscripten_get_canvas_element_size("#canvas", &width, &height);
-
-    std::string str = std::to_string((int)width);
-    print_console(str.c_str());
+    // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    double a, b;
+    emscripten_get_element_css_size("#canvas", &a, &b);
+    // print_console_float(a);
+    // emscripten_get_canvas_element_size("#canvas", &width, &height);
+    double dpr = emscripten_get_device_pixel_ratio();
+    width = (int)(a * dpr);
+    height = (int)(b * dpr);
     InitWindow(width, height, "AlgoPlex");
     SetExitKey(KEY_NULL);
     if (IsWindowReady()) {
@@ -73,7 +75,7 @@ void App::setState(AV::AppState new_state) { g_app_state = new_state; }
 void App::run(void) {
   if (App::g_app_state != AV::QUIT) {
     current_state->input();
-    current_state->update();
+    current_state->update(&resolution);
     current_state->draw(&resolution);
   } else {
     // this->setState(std::make_unique<Menu>("Algorithm Visualizer"));
@@ -104,7 +106,10 @@ void App::runWrapper() { getInstance().run(); }
 
 #if defined(PLATFORM_WEB)
 void App::initWeb() {
-  emscripten_get_canvas_element_size("#canvas", &resolution.x, &resolution.y);
+
+  // Need to return EventDescriptors from init that I will dispatch after I set
+  // the main loop, so that the wasm module has the required functions that will
+  // be used by react.
   current_state->init();
 
   notify_algorithms();

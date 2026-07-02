@@ -11,7 +11,7 @@ public:
   virtual ~State() {}
   virtual void init() = 0;
   virtual void draw(IVector2 *) = 0;
-  virtual void update() = 0;
+  virtual void update(IVector2 *) = 0;
   virtual void input() {};
 };
 } // namespace AV

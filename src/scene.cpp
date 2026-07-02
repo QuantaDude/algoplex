@@ -79,13 +79,6 @@ void start_algo(AV::Scene *scene) {
     EventDescriptor e(EventAction::AlgoStateUpdate, EventTarget::Stack);
     dispatchSceneEvent(e);
   }
-
-  // step through the root node
-  // ic> (!scene->nodes.empty()) {
-  //   scene->algorithm_state = AV::Running;
-  //   scene->traverse();
-  //
-  // }
 }
 void step_algo(AV::Scene *scene) {
   scene->algorithm_state = AV::Stepping;
@@ -103,20 +96,43 @@ void update_mode(AV::Scene *ptr, int main, int sub) {
 
 AV::Scene *get_scene_ptr() { return AV::scene_ptr; }
 
-void on_resize(void) {
-  int x, y;
-  emscripten_get_canvas_element_size("#canvas", &x, &y);
-  SetWindowSize(x, y);
-}
+void on_resize(void) { AV::scene_ptr->update_res = true; }
 const char *get_stack_json() { return AV::scene_ptr->getStackJSON(); }
 const char *get_adj_json() { return AV::scene_ptr->getAdjJSON(); }
+const char *get_node_list_json() { return AV::scene_ptr->getNodeListJSON(); }
+const char *get_root_node_json() { return AV::scene_ptr->getRootNodeJSON(); }
 
+void reset_scene() { return AV::scene_ptr->resetScene(); }
+void toggle_keybind_overlay() { AV::scene_ptr->ToggleKeybindOverlay(); }
+void set_root_node(u_int32_t idx) { AV::scene_ptr->setRootNode(idx); }
+void set_node_val(u_int32_t node_id, int value) {
+  AV::scene_ptr->setNodeVal(node_id, value);
+}
+void set_hover_state(bool hover, u_int32_t node_id) {
+  //if hover is being set as false, go to the old pos.
+
+  AV::scene_ptr->moveCamera = hover;
+  if (!hover) {
+
+    AV::scene_ptr->g_camera.offset = AV::scene_ptr->camera_old_offset;
+    AV::scene_ptr->g_camera.target = AV::scene_ptr->camera_old_target;
+    AV::scene_ptr->g_camera.zoom = AV::scene_ptr->camera_old_zoom;
+  } else {
+
+    AV::scene_ptr->hoveredNodeIdx = AV::scene_ptr->id_to_node_idx[node_id];
+
+    AV::scene_ptr->camera_old_offset = AV::scene_ptr->g_camera.offset;
+
+    AV::scene_ptr->camera_old_target = AV::scene_ptr->g_camera.target;
+    AV::scene_ptr->camera_old_zoom = AV::scene_ptr->g_camera.zoom;
+  }
+}
 int get_current_algorithm_id() { return AV::scene_ptr->getCurrentAlgoId(); }
 
 AV::Scene::Scene(Font *font)
 
-    : algorithm_state(AV::Idle), g_camera({{0}}), m_font(font),
-      m_input_mode(InteractionMode::None), a_id(AlgorithmId::DFS_A) {}
+    : a_id(AlgorithmId::DFS_A), algorithm_state(AV::Idle), g_camera({{0}}),
+      m_font(font), m_input_mode(InteractionMode::None) {}
 
 namespace AV {
 Scene *scene_ptr = nullptr;
@@ -127,13 +143,17 @@ void AV::Scene::init() {
   lastKey = "";
 
   IVector2 *resolution = App::getInstance().getResolution();
+
+  g_camera.target = {0, 0};
+  g_camera.offset = {resolution->x * 0.5f, resolution->y * 0.5f};
+  g_camera.zoom = 1.5f;
+
   Node newNode;
   newNode.id = 0;
 
   newNode.radius = 15;
 
-  newNode.pos = {g_camera.target.x + (float)(resolution->x / 2),
-                 g_camera.target.y + (float)(resolution->y / 2)};
+  newNode.pos = {g_camera.target.x, g_camera.target.y};
   // newNode.pos = {(float)(resolution->x / 2), (float)(resolution->y / 2)};
   newNode.collider = {newNode.pos.x - newNode.radius,
                       newNode.pos.y - newNode.radius, (float)newNode.radius * 2,
@@ -141,16 +161,20 @@ void AV::Scene::init() {
   newNode.data = 0;
 
   nodes.push_back(newNode);
+  dispatchSceneEvent({EventAction::Add, EventTarget::Node, newNode.id});
+
   selected_node = nodes.end();
   selected_edge_origin = nodes.end();
   root_id = nodes[0].id;
-  g_camera.zoom = 1.5f;
 
-  SetWindowSize(resolution->x, resolution->y);
   // SetMouseScale(resolution->x / 300.0f, resolution->y / 150.0f);
 }
 void AV::Scene::draw(IVector2 *resolution) {
-
+  if (moveCamera) {
+    gotoNode(resolution);
+  } else {
+    hoveredNodeIdx = SIZE_MAX;
+  }
   BeginDrawing();
   ClearBackground({0, 0, 0, 0});
 
@@ -178,12 +202,12 @@ void AV::Scene::draw(IVector2 *resolution) {
                 : (root_id == nodes[i].id)             ? NORD13
                                                        : COLOR_NODE);
 
-    char idText[10];
-    sprintf(idText, "%d", (int)nodes[i].id);
-    Vector2 textSize = MeasureTextEx(*m_font, idText, 20, 1);
+    char dataText[10];
+    sprintf(dataText, "%d", (int)nodes[i].data);
+    Vector2 textSize = MeasureTextEx(*m_font, dataText, 20, 1);
     // DrawText(idText, nodes[i].pos.x - textSize.x / 2,
     //        nodes[i].pos.y - textSize.y / 2, 20, WHITE);
-    DrawTextEx(*m_font, idText, nodes[i].pos - (textSize / 2), 20.0f, 1.0f,
+    DrawTextEx(*m_font, dataText, nodes[i].pos - (textSize / 2), 20.0f, 1.0f,
                WHITE);
   }
 
@@ -191,12 +215,11 @@ void AV::Scene::draw(IVector2 *resolution) {
   AV::Scene::drawUI(*resolution);
 
   EndDrawing();
+
   update_input_mode();
 
 #if defined(PLATFORM_WEB)
-  emscripten_get_canvas_element_size("#canvas", &resolution->x, &resolution->y);
 
-  SetWindowSize(resolution->x, resolution->y);
 #elif defined(PLATFORM_DESKTOP)
   resolution->x = GetScreenWidth();
   resolution->y = GetScreenHeight();
@@ -209,74 +232,78 @@ void AV::Scene::drawUI(IVector2 resolution) {
   Vector2 mousePos = GetMousePosition();
   char posStr[64];
   char modeStr[32];
-  char keybindStr[256];
+  if (show_key_overlay) {
 
-  snprintf(posStr, sizeof(posStr), "(%.0f, %.0f)", mousePos.x, mousePos.y);
+    char keybindStr[256];
 
-  switch (m_input_mode) {
-  case InteractionMode::None:
-    snprintf(modeStr, sizeof(modeStr), "Free Mode");
-    snprintf(keybindStr, sizeof(keybindStr),
-             "A - Create new node.\n\nN - Node Mode.\n\nE - "
-             "Edge Mode.\n\nLMB - Select Node.\n\nRMB - Select Edge.");
-    break;
-  case InteractionMode::NodeCreate:
-    snprintf(modeStr, std::size(modeStr), "Node Create Mode");
-    snprintf(keybindStr, sizeof(keybindStr),
-             "A - Create new node.\n\nS - Node Select Mode.\n\nE - "
-             "Node Edit "
-             "Mode.\n\nLMB - Place New Node.\n\nEsc - Free Mode.");
-    break;
-  case InteractionMode::NodeEdit:
-    snprintf(modeStr, std::size(modeStr), "Node Edit Mode");
-    snprintf(keybindStr, sizeof(keybindStr),
-             "A - Create new node.\n\nC - Node Create Mode.\n\nS - "
-             "Node Select "
-             "Mode.\n\nLMB - Select Node.\n\nEsc - Free Mode.");
-    break;
-  case InteractionMode::NodeSelect:
-    snprintf(modeStr, std::size(modeStr), "Node Select Mode");
-    snprintf(keybindStr, sizeof(keybindStr),
-             "A - Create new node.\n\nC - Node Create Mode.\n\nE - "
-             "Node Edit Mode.\n\nLMB - Select Node.\n\nEsc - Free Mode.");
+    switch (m_input_mode) {
+    case InteractionMode::None:
+      snprintf(modeStr, sizeof(modeStr), "Free Mode");
+      snprintf(keybindStr, sizeof(keybindStr),
+               "A - Create new node.\n\nN - Node Mode.\n\nE - "
+               "Edge Mode.\n\nLMB - Select Node.\n\nRMB - Select Edge.");
+      break;
+    case InteractionMode::NodeCreate:
+      snprintf(modeStr, std::size(modeStr), "Node Create Mode");
+      snprintf(keybindStr, sizeof(keybindStr),
+               "A - Create new node.\n\nS - Node Select Mode.\n\nE - "
+               "Node Edit "
+               "Mode.\n\nLMB - Place New Node.\n\nEsc - Free Mode.");
+      break;
+    case InteractionMode::NodeEdit:
+      snprintf(modeStr, std::size(modeStr), "Node Edit Mode");
+      snprintf(keybindStr, sizeof(keybindStr),
+               "A - Create new node.\n\nC - Node Create Mode.\n\nS - "
+               "Node Select "
+               "Mode.\n\nLMB - Select Node.\n\nEsc - Free Mode.");
+      break;
+    case InteractionMode::NodeSelect:
+      snprintf(modeStr, std::size(modeStr), "Node Select Mode");
+      snprintf(keybindStr, sizeof(keybindStr),
+               "A - Create new node.\n\nC - Node Create Mode.\n\nE - "
+               "Node Edit Mode.\n\nLMB - Select Node.\n\nEsc - Free Mode.");
 
-    break;
-  case InteractionMode::EdgeCreate:
-    snprintf(modeStr, std::size(modeStr), "Edge Create Mode");
-    snprintf(keybindStr, sizeof(keybindStr),
-             "A - Create new node.\n\nN - Node Select Mode.\n\nE - "
-             "Edge Edit"
-             "Mode.\n\nC -Edge Create Mode.\n\nRMB- Create "
-             "Edge.\n\nEsc - Free Mode.");
-    break;
-  case InteractionMode::EdgeSelect:
-    snprintf(modeStr, std::size(modeStr), "Edge Select Mode");
-    snprintf(keybindStr, sizeof(keybindStr),
-             "A - Create new node.\n\nN - Node Select Mode.\n\nE - "
-             "Edge Edit "
-             "Mode.\n\nC - Edge Create Mode.\n\nRMB - Select Edge.\n\nEsc - "
-             "Free Mode.");
-    break;
-  case InteractionMode::EdgeEdit:
-    snprintf(modeStr, std::size(modeStr), "Edge Edit Mode");
-    snprintf(keybindStr, sizeof(keybindStr),
-             "A - Create new node.\n\nN - Node Select Mode.\n\nS - "
-             "Edge Select "
-             "Mode.\n\nC - Edge Create Mode.\n\nRMB - Select Edge.\n\nEsc - "
-             "Free Mode.");
-    break;
+      break;
+    case InteractionMode::EdgeCreate:
+      snprintf(modeStr, std::size(modeStr), "Edge Create Mode");
+      snprintf(keybindStr, sizeof(keybindStr),
+               "A - Create new node.\n\nN - Node Select Mode.\n\nE - "
+               "Edge Edit"
+               "Mode.\n\nC -Edge Create Mode.\n\nRMB- Create "
+               "Edge.\n\nEsc - Free Mode.");
+      break;
+    case InteractionMode::EdgeSelect:
+      snprintf(modeStr, std::size(modeStr), "Edge Select Mode");
+      snprintf(keybindStr, sizeof(keybindStr),
+               "A - Create new node.\n\nN - Node Select Mode.\n\nE - "
+               "Edge Edit "
+               "Mode.\n\nC - Edge Create Mode.\n\nRMB - Select Edge.\n\nEsc - "
+               "Free Mode.");
+      break;
+    case InteractionMode::EdgeEdit:
+      snprintf(modeStr, std::size(modeStr), "Edge Edit Mode");
+      snprintf(keybindStr, sizeof(keybindStr),
+               "A - Create new node.\n\nN - Node Select Mode.\n\nS - "
+               "Edge Select "
+               "Mode.\n\nC - Edge Create Mode.\n\nRMB - Select Edge.\n\nEsc - "
+               "Free Mode.");
+      break;
 
-  default:
+    default:
 
-    break;
+      break;
+    }
+
+    int keybindStrWidth = MeasureText(keybindStr, 25);
+    int modeStrWidth = MeasureText(modeStr, 25);
+
+    DrawText(keybindStr, 50 + (resolution.x - keybindStrWidth) / 2, 100, 25,
+             COLOR_TEXT);
+    DrawText(modeStr, 50 + (resolution.x - modeStrWidth) / 2, 20, 25,
+             COLOR_TEXT);
   }
 
-  int keybindStrWidth = MeasureText(keybindStr, 25);
-  int modeStrWidth = MeasureText(modeStr, 25);
-
-  DrawText(keybindStr, 50 + (resolution.x - keybindStrWidth) / 2, 100, 25,
-           COLOR_TEXT);
-  DrawText(modeStr, 50 + (resolution.x - modeStrWidth) / 2, 20, 25, COLOR_TEXT);
+  snprintf(posStr, sizeof(posStr), "(%.0f, %.0f)", mousePos.x, mousePos.y);
   DrawText(posStr, 10, resolution.y - 30, 25, COLOR_TEXT);
 
   DrawText(getKeyName(), resolution.x - MeasureText(getKeyName(), 25) - 10,
@@ -441,43 +468,20 @@ void AV::Scene::input() {
     }
     break;
   case InteractionMode::NodeEdit:
-    if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_DELETE)) {
-      if (selected_node != nodes.end() && nodes.begin() != nodes.end()) {
-        std::vector<u_int32_t> node_idx;
-        for (std::vector<Edge>::iterator edge = edges.begin();
-             edge < edges.end();) {
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+      bool clickedOnNode = false;
 
-          // find all nodes which connect to this edge and delete them from the
-          // node struct
+      for (size_t i = 0; i < nodes.size(); i++) {
+        if (CheckCollisionPointRec(mouse_world_pos, nodes[i].collider)) {
 
-          if (edge->from == selected_node->id ||
-              edge->to == selected_node->id) {
-
-            std::erase(selected_node->edges, edge->from);
-
-            std::erase(nodes[id_to_node_idx[edge->from]].edges, edge->to);
-            std::erase(nodes[id_to_node_idx[edge->to]].edges, edge->from);
-
-            std::erase(selected_node->edges, edge->to);
-            edges.erase(edge);
-          } else {
-
-            ++edge;
-          }
+          clickedOnNode = true;
+          const Vector2 nodepos = GetWorldToScreen2D(nodes[i].pos, g_camera);
+          dispatchUIEvent({EventAction::Edit, EventTarget::Node, nodes[i].id},
+                          nodepos, nodes[i].data);
+          break;
         }
-        nodes.erase(selected_node);
-        for (size_t i = 0; i < nodes.size(); i++) {
-          id_to_node_idx[nodes[i].id] = i;
-        }
-        selected_node = nodes.end();
-        selected_edge_origin = nodes.end();
-        dispatchSceneEvent(
-            {EventAction::Remove, EventTarget::Node,
-             static_cast<u_int32_t>(
-                 std::distance(nodes.begin(), selected_node) - 1)});
       }
     }
-
     break;
 
   case InteractionMode::EdgeCreate:
@@ -801,8 +805,23 @@ bool AV::Scene::IsMouseHoveringEdge(const Vector2 &mouse, const Vector2 &p1,
   return dist <= thickness;
 }
 
-void AV::Scene::update() {
+void AV::Scene::update(IVector2 *resolution) {
+  if (update_res) {
 
+    double css_w, css_h;
+    emscripten_get_element_css_size("#canvas", &css_w, &css_h);
+    double dpr = emscripten_get_device_pixel_ratio();
+    *resolution = {static_cast<int>(std::ceil(css_w * dpr)),
+                   static_cast<int>(std::ceil(css_h * dpr))};
+
+    SetWindowSize(resolution->x, resolution->y);
+    update_res = false;
+  }
+  // ic> (resetCamOffset) {
+  //
+  //   g_camera.offset = {resolution->x * 0.5f, resolution->y * 0.5f};
+  //   resetCamOffset = false;
+  // }
   if (selected_node != nodes.end()) {
     Vector2 mouseWorld = GetScreenToWorld2D(GetMousePosition(), g_camera);
     selected_node->pos = mouseWorld;
@@ -846,27 +865,6 @@ void AV::Scene::traverse() {
     hoveredNodeIdx = current;
   }
 }
-void AV::Scene::drawDFSStack(Rectangle box) {
-  std::vector<DFSFrame> frames;
-
-  std::stack<DFSFrame> copy = dfs_stack;
-  while (!copy.empty()) {
-    frames.push_back(copy.top());
-    copy.pop();
-  }
-
-  float y = box.y + 25;
-
-  for (size_t i = 0; i < frames.size(); i++) {
-    const char *phase = frames[i].phase == DFSPhase::ENTER ? "ENTER" : "EXIT";
-
-    char label[64];
-    sprintf(label, "%s %d", phase, frames[i].node);
-
-    // GuiLabel({box.x + 10, y, box.width - 20, 20}, label);
-    y += 22;
-  }
-}
 
 const char *AV::Scene::getStackJSON() {
 
@@ -902,7 +900,6 @@ const char *AV::Scene::getAdjJSON() {
   std::format_to(out, "[");
 
   bool firstNode = true;
-  int i = 0;
   for (const auto &node : nodes) {
     if (!firstNode)
       std::format_to(out, ",");
@@ -921,7 +918,6 @@ const char *AV::Scene::getAdjJSON() {
     // now all variables are ready — single format_to call per node
     std::format_to(out, GET_ADJ_MAT_FMT(DFS_A), node.id, edges);
 
-    i++;
     firstNode = false;
   }
 
@@ -929,4 +925,83 @@ const char *AV::Scene::getAdjJSON() {
   return result.c_str();
 }
 
+const char *AV::Scene::getNodeListJSON() {
+  static std::string result;
+  result.clear();
+
+  auto out = std::back_inserter(result);
+  std::format_to(out, "[");
+
+  bool firstNode = true;
+  for (const auto &node : nodes) {
+    if (!firstNode)
+      std::format_to(out, ",");
+
+    std::format_to(out, GRAPH_NODE_LIST_FMT, node.id, node.data);
+
+    firstNode = false;
+  }
+
+  std::format_to(out, "]");
+  return result.c_str();
+}
+
+const char *AV::Scene::getRootNodeJSON() {
+
+  static std::string result;
+  result.clear();
+
+  auto out = std::back_inserter(result);
+
+  std::format_to(out, GRAPH_NODE_FMT, root_id,
+                 nodes[id_to_node_idx[root_id]].data);
+
+  return result.c_str();
+}
+
+void AV::Scene::setRootNode(u_int32_t idx) {
+  root_id = idx;
+  dispatchSceneEvent({EventAction::Edit, EventTarget::Node, root_id});
+}
+
+void AV::Scene::setNodeVal(u_int32_t node_id, int value) {
+  nodes[id_to_node_idx[node_id]].data = value;
+  dispatchSceneEvent({EventAction::Edit, EventTarget::Node, node_id});
+}
+
+void AV::Scene::resetScene() {
+  nodes.clear();
+  edges.clear();
+  id_to_node_idx.clear();
+  visited.clear();
+  // dfs_stack.clear();
+  selected_node = nodes.end();
+  hoveredNodeIdx = SIZE_MAX;
+  hoveredEdgeIdx = SIZE_MAX;
+  selected_edge_origin = nodes.end();
+  root_id = 0;
+  while (!dfs_stack.empty()) {
+    dfs_stack.pop();
+  }
+  dispatchSceneEvent({EventAction::Remove, EventTarget::Node, 0});
+  dispatchSceneEvent({EventAction::Remove, EventTarget::Edge, 0});
+  dispatchSceneEvent({EventAction::AlgoStateUpdate, EventTarget::Stack, 0});
+}
+void AV::Scene::gotoNode(IVector2 *resolution) {
+  Vector2 node_pos = nodes[id_to_node_idx[hoveredNodeIdx]].pos;
+
+  g_camera.target = Vector2Lerp(g_camera.target, node_pos, 0.1f);
+  g_camera.zoom = Lerp(g_camera.zoom, 2.0f, 0.05f);
+  g_camera.offset = Vector2Lerp(
+      g_camera.offset,
+      {(float)resolution->x / 2.0f, (float)resolution->y / 2.0f}, 0.1f);
+  if (g_camera.target == node_pos &&
+      g_camera.offset.x == (float)resolution->x / 2.0f &&
+      g_camera.offset.y == (float)resolution->y / 2.0f) {
+    moveCamera = false;
+  }
+}
+void AV::Scene::ToggleKeybindOverlay() { show_key_overlay = !show_key_overlay; }
+
 int AV::Scene::getCurrentAlgoId() { return std::to_underlying(a_id); }
+

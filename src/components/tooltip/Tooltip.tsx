@@ -34,7 +34,7 @@ export default function Tooltip({
   const animKey = useRef(0);
   const [visible, setVisible] = useState(false);
 
-  useWindowSize();
+  // useWindowSize();
   // --- Compute everything during render ---
   const locationChanged = prevTarget.current !== page.tooltipTarget;
   if (locationChanged) {
@@ -45,32 +45,32 @@ export default function Tooltip({
   let tooltipPos = { x: 0, y: 0 };
   let nudgeDir = { x: 0, y: 0 };
 
-  if (page.tooltipTarget.current) {
-    const rect = page.tooltipTarget.current.getBoundingClientRect();
-    const f_rx =
-      page.targetCOverride != null
-        ? rect.left * page.targetCOverride.left +
-          rect.right * page.targetCOverride.right
-        : rect.left + rect.right;
+  // if (page.tooltipTarget.current) {
+  const rect = page.tooltipTarget.current.getBoundingClientRect();
+  const f_rx =
+    page.targetCOverride != null
+      ? rect.left * page.targetCOverride.left +
+        rect.right * page.targetCOverride.right
+      : rect.left + rect.right;
 
-    const f_ry =
-      page.targetCOverride != null
-        ? rect.top * page.targetCOverride.top +
-          rect.bottom * page.targetCOverride.bottom
-        : rect.top + rect.bottom;
+  const f_ry =
+    page.targetCOverride != null
+      ? rect.top * page.targetCOverride.top +
+        rect.bottom * page.targetCOverride.bottom
+      : rect.top + rect.bottom;
 
-    const targetCX = f_rx / 2;
-    const targetCY = f_ry / 2;
+  const targetCX = f_rx / 2;
+  const targetCY = f_ry / 2;
 
-    const tipX = targetCX + page.tooltipPos.x;
-    const tipY = targetCY + page.tooltipPos.y;
-    const dx = targetCX - tipX;
-    const dy = targetCY - tipY;
-    const len = Math.sqrt(dx * dx + dy * dy);
-    const nudgeAmount = 6;
-    tooltipPos = { x: tipX, y: tipY };
-    nudgeDir = { x: (dx / len) * nudgeAmount, y: (dy / len) * nudgeAmount };
-  }
+  const tipX = targetCX + page.tooltipPos.x;
+  const tipY = targetCY + page.tooltipPos.y;
+  const dx = targetCX - tipX;
+  const dy = targetCY - tipY;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const nudgeAmount = 6;
+  tooltipPos = { x: tipX, y: tipY };
+  nudgeDir = { x: (dx / len) * nudgeAmount, y: (dy / len) * nudgeAmount };
+  // }
 
   useEffect(() => {
     if (locationChanged) setVisible(false);

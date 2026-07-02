@@ -14,7 +14,7 @@ public:
   Menu(const char *);
   void init() override;
   void draw(IVector2 *) override;
-  void update() override;
+  void update(IVector2 *) override;
   void input() override;
   void DrawUI(IVector2);
 

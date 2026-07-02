@@ -13,6 +13,14 @@
 // @AdjacencyMatrix   DFS_A               node:int        edges:int[]
 #define ADJ_MAT_FMT_DFS_A "{{\"node\":{},\"edges\":[{}]}}"
 
+//@NodeList           Graph               node:int        data:int
+#define GRAPH_NODE_LIST_FMT "{{\"node\":{},\"data\":{}}}"
+
+//@Node               Graph               node:int        data:int
+#define GRAPH_NODE_FMT "{{\"node\":{},\"data\":{}}}"
+
+#define NODE_EDIT_EVENT_FMT                                                    \
+  "{{\"node\":{},\"data\":{\"pos\":{\"x\":{}, \"y\":{}},\"current_val\":{}}}}"
 // Indirection macro so you can pass an algo name token
 #define GET_STACK_FMT(algo) STACK_FORMAT_##algo
 #define GET_ADJ_MAT_FMT(algo) ADJ_MAT_FMT_##algo

@@ -1,5 +1,6 @@
 
 #pragma once
+#include "raylib.h"
 #include <emscripten/em_asm.h>
 #include <emscripten/emscripten.h>
 #include <limits>
@@ -34,3 +35,4 @@ EventDescriptor createEvent(EventAction action, EventTarget target,
                             const char *id = nullptr);
 
 void dispatchSceneEvent(EventDescriptor ed);
+void dispatchUIEvent(EventDescriptor ed, Vector2 pos, int cur_value);

@@ -14,6 +14,8 @@ import StackView from "./components/stackView/StackView.tsx";
 import { createTooltipPages } from "./tooltips.ts";
 import type { DFS_AFrame } from "./types/InfoPanel.ts";
 import AdjacencyMatrix from "./components/adjMatrix/AdjacencyMatrix.tsx";
+import { NodeDataInputHandler } from "./components/nodeDataInputModal/NodeDataInputHandler.tsx";
+import useWindowSize from "./components/hooks/useWindowResize.ts";
 
 function App() {
   const [currentStack, setStack] = useState<Array<DFS_AFrame>>([]);
@@ -32,7 +34,20 @@ function App() {
   const infoPanel1Ref: RefObject<HTMLElement> = useRef(null);
   const infoPanel2Ref: RefObject<HTMLElement> = useRef(null);
   const canvasRef: RefObject<HTMLElement> = useRef(null);
+  const [refsReady, setRefsReady] = useState(false);
 
+  useWindowSize(moduleRef, canvasRef);
+  useEffect(() => {
+    if (
+      algoMenuPanelRef.current &&
+      settingsPanelRef.current &&
+      canvasRef.current &&
+      infoPanel1Ref.current &&
+      codePanelRef.current
+    ) {
+      setRefsReady(true);
+    }
+  }, []);
   const tooltipPages = useMemo(
     () =>
       createTooltipPages({
@@ -85,17 +100,6 @@ function App() {
       locateFile: (path: string) => `${import.meta.env.BASE_URL}wasm/${path}`,
     }).then((module: MainModule) => {
       moduleRef.current = module;
-
-      // window.saveFileFromMEMFSToDisc> = (
-      //   memoryFSname: string,
-      //   localFSname: string,
-      // ) => {
-      //   const data = module.FS.readFile(memoryFSname);
-      //   const blob = new Blob([data.buffer], {
-      //     type: "application/octet-binary",
-      //   });
-      //   saveAs(blob, localFSname);
-      // };
     });
   }, []);
 
@@ -109,13 +113,16 @@ function App() {
         style={{ width: "100%", height: "100%" }}
         onContextMenu={(e) => e.preventDefault()}
       />
-      {showTooltip && (
+      {refsReady && showTooltip && (
         <Tooltip
           pages={tooltipPages}
           onClose={() => {
             setShowTooltip(false);
           }}
         />
+      )}
+      {canvasRef.current != null && (
+        <NodeDataInputHandler wasmModule={moduleRef} canvasRef={canvasRef} />
       )}
       <SettingsPanel ref={settingsPanelRef} wasmModule={moduleRef!} />
       <InfoPanel ref={infoPanel1Ref} id="info1panel" type="Stack">
@@ -126,8 +133,8 @@ function App() {
         />
       </InfoPanel>
       <CodePanel ref={codePanelRef}></CodePanel>
-      <InfoPanel ref={infoPanel2Ref} id="info2panel" type="Graph" >
-      <AdjacencyMatrix wasmModule={moduleRef!}/>
+      <InfoPanel ref={infoPanel2Ref} id="info2panel" type="Graph">
+        <AdjacencyMatrix wasmModule={moduleRef!} />
       </InfoPanel>
     </>
   );
