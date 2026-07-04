@@ -64,6 +64,7 @@ export default function AdjacencyMatrix({
     <div
       className="adjacency-matrix"
       style={{ "--node-count": nodes.length } as React.CSSProperties}
+      onMouseEnter={()=>{wasmModule.current._save_camera_pos();}}
       onMouseLeave={(e: MouseEvent) => {
         /*not mandatory to set hover state to false*/
         if (hoverStateChanged.current) {
@@ -83,8 +84,9 @@ export default function AdjacencyMatrix({
           }}
           onClick={() => {
             //basically we want the position to stay after moving out of the div if we click on it.
-//NOTE: I have to create a specific funcction that permanently sets the camera pos.
+            //NOTE: I have to create a specific funcction that permanently sets the camera pos.
             hoverStateChanged.current = false;
+            wasmModule.current._save_camera_pos();
           }}
         >
           {node.node}

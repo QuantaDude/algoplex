@@ -108,29 +108,40 @@ void set_root_node(u_int32_t idx) { AV::scene_ptr->setRootNode(idx); }
 void set_node_val(u_int32_t node_id, int value) {
   AV::scene_ptr->setNodeVal(node_id, value);
 }
+void save_camera_pos() {
+  AV::scene_ptr->camera_old_offset = AV::scene_ptr->g_camera.offset;
+
+  AV::scene_ptr->camera_old_target = AV::scene_ptr->g_camera.target;
+  AV::scene_ptr->camera_old_zoom = AV::scene_ptr->g_camera.zoom;
+}
+void set_camera_pos_to_old_pos() {
+  AV::scene_ptr->g_camera.offset = AV::scene_ptr->camera_old_offset;
+  AV::scene_ptr->g_camera.target = AV::scene_ptr->camera_old_target;
+  AV::scene_ptr->g_camera.zoom = AV::scene_ptr->camera_old_zoom;
+
+  AV::scene_ptr->hoveredNodeIdx = SIZE_MAX;
+  //gotoPos should check if the camera is already at the old pos and then set moveCamera to false in it;
+}
+
 void set_hover_state(bool hover, u_int32_t node_id) {
+  if (AV::scene_ptr->algorithm_state == AV::Running ||
+      AV::scene_ptr->algorithm_state == AV::Stepping) {
+    return;
+  }
+
   //if hover is being set as false, go to the old pos.
 
   if (!hover) {
 
-    AV::scene_ptr->moveCamera = hover;
-    AV::scene_ptr->g_camera.offset = AV::scene_ptr->camera_old_offset;
-    AV::scene_ptr->g_camera.target = AV::scene_ptr->camera_old_target;
-    AV::scene_ptr->g_camera.zoom = AV::scene_ptr->camera_old_zoom;
+    AV::scene_ptr->hoveredNodeIdx = SIZE_MAX;
+    //gotoPos will run in this condition and move the camera back to old pos;
+
   } else {
 
     AV::scene_ptr->hoveredNodeIdx = AV::scene_ptr->id_to_node_idx[node_id];
-    //basically check if mouse just moved over another div/element without setting hover to false in between. This is a temp workaround to what I am trying to do.
-    if (AV::scene_ptr->moveCamera == false) {
-
-      AV::scene_ptr->camera_old_offset = AV::scene_ptr->g_camera.offset;
-
-      AV::scene_ptr->camera_old_target = AV::scene_ptr->g_camera.target;
-      AV::scene_ptr->camera_old_zoom = AV::scene_ptr->g_camera.zoom;
-    }
-
-    AV::scene_ptr->moveCamera = hover;
   }
+
+  AV::scene_ptr->moveCamera = true;
 }
 int get_current_algorithm_id() { return AV::scene_ptr->getCurrentAlgoId(); }
 
@@ -166,7 +177,8 @@ void AV::Scene::init() {
   newNode.data = 0;
 
   nodes.push_back(newNode);
-  dispatchSceneEvent({EventAction::Add, EventTarget::Node, newNode.id});
+  // NOTE: I need to create an event queue.
+  // dispatchSceneEvent({EventAction::Add, EventTarget::Node, newNode.id});
 
   selected_node = nodes.end();
   selected_edge_origin = nodes.end();
@@ -175,10 +187,10 @@ void AV::Scene::init() {
   // SetMouseScale(resolution->x / 300.0f, resolution->y / 150.0f);
 }
 void AV::Scene::draw(IVector2 *resolution) {
-  if (moveCamera) {
+  if (moveCamera && hoveredNodeIdx != SIZE_MAX) {
     gotoNode(resolution);
-  } else {
-    hoveredNodeIdx = SIZE_MAX;
+  } else if (moveCamera && hoveredNodeIdx == SIZE_MAX) {
+    gotoPos(resolution);
   }
   BeginDrawing();
   ClearBackground({0, 0, 0, 0});
@@ -274,7 +286,7 @@ void AV::Scene::drawUI(IVector2 resolution) {
       snprintf(keybindStr, sizeof(keybindStr),
                "A - Create new node.\n\nN - Node Select Mode.\n\nE - "
                "Edge Edit"
-               "Mode.\n\nC -Edge Create Mode.\n\nRMB- Create "
+               "Mode.\n\nC - Edge Create Mode.\n\nRMB - Create "
                "Edge.\n\nEsc - Free Mode.");
       break;
     case InteractionMode::EdgeSelect:
@@ -350,60 +362,64 @@ void AV::Scene::input() {
   switch (m_input_mode) {
 
   case InteractionMode::NodeCreate:
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-      bool clickedOnNode = false;
 
-      for (size_t i = 0; i < nodes.size(); i++) {
-        if (CheckCollisionPointRec(mouse_world_pos, nodes[i].collider)) {
+    if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
+      if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        bool clickedOnNode = false;
 
-          clickedOnNode = true;
+        for (size_t i = 0; i < nodes.size(); i++) {
+          if (CheckCollisionPointRec(mouse_world_pos, nodes[i].collider)) {
 
-          if (selected_node == nodes.end()) {
-            selected_node = nodes.begin() + i;
-            selected_node->oldPos = selected_node->pos;
-            break;
-          } else if (selected_node != nodes.begin() + i) {
-            break;
+            clickedOnNode = true;
 
-          } else if (selected_node == nodes.begin() + i) {
-            // Deselect if clicking on the same node
-            clickedOnNode = false;
+            if (selected_node == nodes.end()) {
+              selected_node = nodes.begin() + i;
+              selected_node->oldPos = selected_node->pos;
+              break;
+            } else if (selected_node != nodes.begin() + i) {
+              break;
+
+            } else if (selected_node == nodes.begin() + i) {
+              // Deselect if clicking on the same node
+              clickedOnNode = false;
+            }
           }
         }
-      }
 
-      // Deselect if clicking on empty space
-      if (!clickedOnNode && selected_node != nodes.end()) {
-        selected_node = nodes.end();
-        break;
-      }
-
-      // create new node
-      if (selected_node == nodes.end() && selected_edge_origin == nodes.end()) {
-        Node newNode;
-        if (nodes.begin() != nodes.end()) {
-          newNode.id = (nodes.end() - 1)->id + 1;
-        } else {
-          newNode.id = 0;
+        // Deselect if clicking on empty space
+        if (!clickedOnNode && selected_node != nodes.end()) {
+          selected_node = nodes.end();
+          break;
         }
-        Vector2 mouseWorld = GetScreenToWorld2D(GetMousePosition(), g_camera);
-        newNode.pos = mouseWorld;
-        // newNode.oldPos = mouseWorld;
-        newNode.radius = 15;
-        newNode.collider = {
-            newNode.pos.x - newNode.radius, newNode.pos.y - newNode.radius,
-            (float)newNode.radius * 2, (float)newNode.radius * 2};
-        newNode.data = nodes.size();
 
-        nodes.push_back(newNode);
+        // create new node
+        if (selected_node == nodes.end() &&
+            selected_edge_origin == nodes.end()) {
+          Node newNode;
+          if (nodes.begin() != nodes.end()) {
+            newNode.id = (nodes.end() - 1)->id + 1;
+          } else {
+            newNode.id = 0;
+          }
+          Vector2 mouseWorld = GetScreenToWorld2D(GetMousePosition(), g_camera);
+          newNode.pos = mouseWorld;
+          // newNode.oldPos = mouseWorld;
+          newNode.radius = 15;
+          newNode.collider = {
+              newNode.pos.x - newNode.radius, newNode.pos.y - newNode.radius,
+              (float)newNode.radius * 2, (float)newNode.radius * 2};
+          newNode.data = nodes.size();
 
-        id_to_node_idx[newNode.id] = nodes.size() - 1;
-        // selectedNode = &nodes.back();
-        selected_node = nodes.end();
-        selected_edge_origin = nodes.end();
+          nodes.push_back(newNode);
 
-        dispatchSceneEvent(
-            {EventAction::Add, EventTarget::Node, nodes.size() - 1});
+          id_to_node_idx[newNode.id] = nodes.size() - 1;
+          // selectedNode = &nodes.back();
+          selected_node = nodes.end();
+          selected_edge_origin = nodes.end();
+
+          dispatchSceneEvent(
+              {EventAction::Add, EventTarget::Node, nodes.size() - 1});
+        }
       }
     }
     break;
@@ -437,38 +453,41 @@ void AV::Scene::input() {
         selected_node = nodes.end();
       }
     }
-    if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_DELETE)) {
-      if (selected_node != nodes.end() && nodes.begin() != nodes.end()) {
 
-        for (std::vector<Edge>::iterator edge = edges.begin();
-             edge < edges.end();) {
+    if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
+      if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_DELETE)) {
+        if (selected_node != nodes.end() && nodes.begin() != nodes.end()) {
 
-          if (edge->from == selected_node->id ||
-              edge->to == selected_node->id) {
+          for (std::vector<Edge>::iterator edge = edges.begin();
+               edge < edges.end();) {
 
-            std::erase(nodes[id_to_node_idx[edge->from]].edges, edge->to);
-            std::erase(nodes[id_to_node_idx[edge->to]].edges, edge->from);
-            std::erase(selected_node->edges, edge->from);
-            std::erase(selected_node->edges, edge->to);
+            if (edge->from == selected_node->id ||
+                edge->to == selected_node->id) {
 
-            edges.erase(edge);
-          } else {
-            ++edge;
+              std::erase(nodes[id_to_node_idx[edge->from]].edges, edge->to);
+              std::erase(nodes[id_to_node_idx[edge->to]].edges, edge->from);
+              std::erase(selected_node->edges, edge->from);
+              std::erase(selected_node->edges, edge->to);
+
+              edges.erase(edge);
+            } else {
+              ++edge;
+            }
           }
-        }
 
-        nodes.erase(selected_node);
-        id_to_node_idx.clear();
+          nodes.erase(selected_node);
+          id_to_node_idx.clear();
 
-        for (size_t i = 0; i < nodes.size(); i++) {
-          id_to_node_idx[nodes[i].id] = i;
+          for (size_t i = 0; i < nodes.size(); i++) {
+            id_to_node_idx[nodes[i].id] = i;
+          }
+          selected_node = nodes.end();
+          selected_edge_origin = nodes.end();
+          dispatchSceneEvent(
+              {EventAction::Remove, EventTarget::Node,
+               static_cast<u_int32_t>(
+                   std::distance(nodes.begin(), selected_node) - 1)});
         }
-        selected_node = nodes.end();
-        selected_edge_origin = nodes.end();
-        dispatchSceneEvent(
-            {EventAction::Remove, EventTarget::Node,
-             static_cast<u_int32_t>(
-                 std::distance(nodes.begin(), selected_node) - 1)});
       }
     }
     break;
@@ -490,100 +509,107 @@ void AV::Scene::input() {
     break;
 
   case InteractionMode::EdgeCreate:
-    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
 
-      for (size_t i = 0; i < nodes.size(); i++) {
-        if (CheckCollisionPointRec(mouse_world_pos, nodes[i].collider)) {
+    if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
+      if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
 
-          if (selected_edge_origin == nodes.end()) {
-            m_input_mode = InteractionMode::EdgeCreate;
-            selected_edge_origin = nodes.begin() + i;
-          } else if (selected_edge_origin != nodes.end() &&
-                     selected_edge_origin != nodes.begin() + i) {
+        for (size_t i = 0; i < nodes.size(); i++) {
+          if (CheckCollisionPointRec(mouse_world_pos, nodes[i].collider)) {
 
-            Edge newEdge;
-            newEdge.from = (selected_edge_origin)->id;
-            newEdge.to = nodes[i].id;
+            if (selected_edge_origin == nodes.end()) {
+              m_input_mode = InteractionMode::EdgeCreate;
+              selected_edge_origin = nodes.begin() + i;
+            } else if (selected_edge_origin != nodes.end() &&
+                       selected_edge_origin != nodes.begin() + i) {
 
-            bool edgeExists = false;
-            for (const auto &edge : edges) {
-              if ((edge.from == newEdge.from && edge.to == newEdge.to) ||
-                  (edge.from == newEdge.to && edge.to == newEdge.from)) {
-                edgeExists = true;
-                break;
+              Edge newEdge;
+              newEdge.from = (selected_edge_origin)->id;
+              newEdge.to = nodes[i].id;
+
+              bool edgeExists = false;
+              for (const auto &edge : edges) {
+                if ((edge.from == newEdge.from && edge.to == newEdge.to) ||
+                    (edge.from == newEdge.to && edge.to == newEdge.from)) {
+                  edgeExists = true;
+                  break;
+                }
               }
+              if (!edgeExists) {
+                edges.push_back(newEdge);
+
+                // Also add to node's edge list
+                selected_edge_origin->edges.push_back(newEdge.to);
+                // nodes[newEdge.from].edges.push_back(newEdge.to);
+                // nodes[newEdge.to].edges.push_back(newEdge.from);
+                nodes[i].edges.push_back(newEdge.from);
+
+                dispatchSceneEvent(
+                    {EventAction::Add, EventTarget::Edge, newEdge.from});
+              }
+
+              selected_edge_origin = nodes.end();
+            } else {
+              selected_edge_origin = nodes.end();
             }
-            if (!edgeExists) {
-              edges.push_back(newEdge);
-
-              // Also add to node's edge list
-              selected_edge_origin->edges.push_back(newEdge.to);
-              // nodes[newEdge.from].edges.push_back(newEdge.to);
-              // nodes[newEdge.to].edges.push_back(newEdge.from);
-              nodes[i].edges.push_back(newEdge.from);
-
-              dispatchSceneEvent(
-                  {EventAction::Add, EventTarget::Edge, newEdge.from});
-            }
-
-            selected_edge_origin = nodes.end();
-          } else {
-            selected_edge_origin = nodes.end();
+            return;
           }
-          return;
         }
+        selected_edge_origin = nodes.end();
       }
-      selected_edge_origin = nodes.end();
     }
     break;
 
   case InteractionMode::EdgeEdit:
     // Maybe highlight edge, allow delete
-    for (size_t i = 0; i < edges.size(); i++) {
-      if (IsMouseHoveringEdge(mouse_world_pos, nodes[edges[i].from].pos,
-                              nodes[edges[i].to].pos)) {
-        m_input_mode = InteractionMode::EdgeEdit;
-        hoveredEdgeIdx = i;
-        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) &&
-            selected_edge_origin == nodes.end()) {
-          selected_edge_origin = nodes.begin() + (edges.begin() + i)->from;
-          std::vector<Edge>::iterator it = edges.begin();
-          it += i;
-          edges.erase(it);
-          hoveredEdgeIdx = SIZE_MAX;
 
-          return;
+    if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
+      for (size_t i = 0; i < edges.size(); i++) {
+        if (IsMouseHoveringEdge(mouse_world_pos, nodes[edges[i].from].pos,
+                                nodes[edges[i].to].pos)) {
+          m_input_mode = InteractionMode::EdgeEdit;
+          hoveredEdgeIdx = i;
+          if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) &&
+              selected_edge_origin == nodes.end()) {
+            selected_edge_origin = nodes.begin() + (edges.begin() + i)->from;
+            std::vector<Edge>::iterator it = edges.begin();
+            it += i;
+            edges.erase(it);
+            hoveredEdgeIdx = SIZE_MAX;
+
+            return;
+          }
         }
       }
-    }
-    if (selected_edge_origin != nodes.end() &&
-        IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-      for (size_t i = 0; i < nodes.size(); i++) {
-        if (CheckCollisionPointRec(mouse_world_pos, nodes[i].collider)) {
+      if (selected_edge_origin != nodes.end() &&
+          IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+        for (size_t i = 0; i < nodes.size(); i++) {
+          if (CheckCollisionPointRec(mouse_world_pos, nodes[i].collider)) {
 
-          if (selected_edge_origin != nodes.begin() + i) {
-            Edge newEdge;
-            int originNodeIdx = (int)(selected_edge_origin - nodes.begin());
-            newEdge.from = originNodeIdx;
-            newEdge.to = i;
-            edges.push_back(newEdge);
+            if (selected_edge_origin != nodes.begin() + i) {
+              Edge newEdge;
+              int originNodeIdx = (int)(selected_edge_origin - nodes.begin());
+              newEdge.from = originNodeIdx;
+              newEdge.to = i;
+              edges.push_back(newEdge);
 
-            nodes[newEdge.from].edges.push_back(newEdge.to);
-            nodes[newEdge.to].edges.push_back(newEdge.from);
+              nodes[newEdge.from].edges.push_back(newEdge.to);
+              nodes[newEdge.to].edges.push_back(newEdge.from);
 
-            dispatchSceneEvent({EventAction::Add, EventTarget::Node,
-                                static_cast<u_int32_t>(std::distance(
-                                    nodes.begin(), selected_edge_origin))});
+              dispatchSceneEvent({EventAction::Add, EventTarget::Node,
+                                  static_cast<u_int32_t>(std::distance(
+                                      nodes.begin(), selected_edge_origin))});
 
-            selected_edge_origin = nodes.end();
+              selected_edge_origin = nodes.end();
+            }
           }
         }
       }
     }
-
     break;
 
   case InteractionMode::EdgeSelect:
+
+  if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
     for (size_t i = 0; i < edges.size(); i++) {
       if (IsMouseHoveringEdge(mouse_world_pos, nodes[edges[i].from].pos,
                               nodes[edges[i].to].pos)) {
@@ -605,6 +631,7 @@ void AV::Scene::input() {
         return;
       }
     }
+      }
     break;
   case InteractionMode::None:
   default:
@@ -666,6 +693,8 @@ void AV::Scene::input() {
 
   // camera controls
   if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+    moveCamera = false;
+
     Vector2 delta = GetMouseDelta();
     delta = Vector2Scale(delta, -1.0f / g_camera.zoom);
     g_camera.target = Vector2Add(g_camera.target, delta);
@@ -673,6 +702,7 @@ void AV::Scene::input() {
 
   float wheel = GetMouseWheelMove();
   if (wheel != 0) {
+    moveCamera = false;
     // Get the world point that is under the mouse
 
     g_camera.offset = GetMousePosition();
@@ -813,18 +843,23 @@ bool AV::Scene::IsMouseHoveringEdge(const Vector2 &mouse, const Vector2 &p1,
 void AV::Scene::update(IVector2 *resolution) {
   if (update_res) {
 
+    // What world point is currently at the center of the OLD canvas?
+    Vector2 old_center_world = GetScreenToWorld2D(
+        {resolution->x * 0.5f, resolution->y * 0.5f}, g_camera);
+
     double css_w, css_h;
     emscripten_get_element_css_size("#canvas", &css_w, &css_h);
     double dpr = emscripten_get_device_pixel_ratio();
     *resolution = {static_cast<int>(std::ceil(css_w * dpr)),
                    static_cast<int>(std::ceil(css_h * dpr))};
-
     SetWindowSize(resolution->x, resolution->y);
+
+    g_camera.offset = {resolution->x * 0.5f, resolution->y * 0.5f};
+    g_camera.target = old_center_world; // keep that same world point centered
+
     update_res = false;
-  }
-  // ic> (resetCamOffset) {
+  } // ic> (resetCamOffset) {
   //
-  //   g_camera.offset = {resolution->x * 0.5f, resolution->y * 0.5f};
   //   resetCamOffset = false;
   // }
   if (selected_node != nodes.end()) {
@@ -992,6 +1027,14 @@ void AV::Scene::resetScene() {
   dispatchSceneEvent({EventAction::Remove, EventTarget::Edge, 0});
   dispatchSceneEvent({EventAction::AlgoStateUpdate, EventTarget::Stack, 0});
 }
+
+static bool NearlyEqual(float a, float b, float eps = 0.01f) {
+  return fabsf(a - b) <= eps;
+}
+
+static bool Vector2NearlyEqual(Vector2 a, Vector2 b, float eps = 0.01f) {
+  return NearlyEqual(a.x, b.x, eps) && NearlyEqual(a.y, b.y, eps);
+}
 void AV::Scene::gotoNode(IVector2 *resolution) {
   Vector2 node_pos = nodes[id_to_node_idx[hoveredNodeIdx]].pos;
 
@@ -1000,9 +1043,21 @@ void AV::Scene::gotoNode(IVector2 *resolution) {
   g_camera.offset = Vector2Lerp(
       g_camera.offset,
       {(float)resolution->x / 2.0f, (float)resolution->y / 2.0f}, 0.1f);
-  if (g_camera.target == node_pos &&
-      g_camera.offset.x == (float)resolution->x / 2.0f &&
-      g_camera.offset.y == (float)resolution->y / 2.0f) {
+  if (Vector2NearlyEqual(g_camera.target, node_pos) &&
+      NearlyEqual(g_camera.zoom, 2.0f) &&
+      Vector2NearlyEqual(g_camera.offset, {(float)resolution->x / 2.0f,
+                                           (float)resolution->y / 2.0f})) {
+    moveCamera = false;
+  }
+}
+void AV::Scene::gotoPos(IVector2 *resolution) {
+  g_camera.target = Vector2Lerp(g_camera.target, camera_old_target, 0.1f);
+  g_camera.zoom = Lerp(g_camera.zoom, camera_old_zoom, 0.05f);
+  g_camera.offset = Vector2Lerp(g_camera.offset, camera_old_offset, 0.1f);
+
+  if (Vector2NearlyEqual(g_camera.target, camera_old_target) &&
+      NearlyEqual(g_camera.zoom, camera_old_zoom) &&
+      Vector2NearlyEqual(g_camera.offset, camera_old_offset)) {
     moveCamera = false;
   }
 }

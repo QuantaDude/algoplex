@@ -43,7 +43,9 @@ function App() {
       settingsPanelRef.current &&
       canvasRef.current &&
       infoPanel1Ref.current &&
-      codePanelRef.current
+      infoPanel2Ref.current &&
+      codePanelRef.current &&
+      navbarRef.current
     ) {
       setRefsReady(true);
     }
@@ -53,8 +55,10 @@ function App() {
       createTooltipPages({
         algoMenuPanelRef,
         settingsPanelRef,
+        navbarRef,
         canvasRef,
         infoPanel1Ref,
+        infoPanel2Ref,
         codePanelRef,
       }),
     [],
@@ -105,7 +109,7 @@ function App() {
 
   return (
     <>
-      <Navbar wasmModule={moduleRef!} />
+      <Navbar ref={navbarRef} wasmModule={moduleRef!} />
       <AlgoMenuPanel ref={algoMenuPanelRef} />
       <canvas
         id="canvas"

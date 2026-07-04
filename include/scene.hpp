@@ -126,6 +126,7 @@ public:
   void resetScene();
   //updates the camera position when the mouse is hovring over an UI element
   void gotoNode(IVector2 *resolution);
+  void gotoPos(IVector2 *resolution);
   int getCurrentAlgoId();
 
   void ToggleKeybindOverlay();
@@ -154,6 +155,9 @@ void EMSCRIPTEN_KEEPALIVE on_resize();
 void EMSCRIPTEN_KEEPALIVE set_root_node(u_int32_t);
 void EMSCRIPTEN_KEEPALIVE set_node_val(u_int32_t, int);
 void EMSCRIPTEN_KEEPALIVE set_hover_state(bool, u_int32_t);
+void EMSCRIPTEN_KEEPALIVE save_camera_pos();
+void EMSCRIPTEN_KEEPALIVE set_camera_pos_to_old_pos();
+
 const char *EMSCRIPTEN_KEEPALIVE get_stack_json();
 const char *EMSCRIPTEN_KEEPALIVE get_adj_json();
 const char *EMSCRIPTEN_KEEPALIVE get_node_list_json();

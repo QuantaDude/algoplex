@@ -4,19 +4,22 @@ import { type TooltipPage } from "./components/tooltip/Tooltip";
 export interface OnboardingRefs {
   algoMenuPanelRef: RefObject<HTMLElement>;
   settingsPanelRef: RefObject<HTMLElement>;
-
+  navbarRef: RefObject<HTMLElement>;
   canvasRef: RefObject<HTMLElement>;
   codePanelRef: RefObject<HTMLElement>;
   infoPanel1Ref: RefObject<HTMLElement>;
+  infoPanel2Ref: RefObject<HTMLElement>;
 }
 
 export function createTooltipPages(ref: OnboardingRefs): TooltipPage[] {
   const {
     algoMenuPanelRef,
     settingsPanelRef,
+    navbarRef,
     canvasRef,
     codePanelRef,
     infoPanel1Ref,
+    infoPanel2Ref,
   } = ref;
 
   return [
@@ -24,7 +27,7 @@ export function createTooltipPages(ref: OnboardingRefs): TooltipPage[] {
       title: "Algorithm List",
       text: [
         "This panel contains all the algorithms you can try out in AlgoPlex.",
-        "You can also select the `custom algorithm` to write your own algorithm.",
+        "In this demo, the Depth First Search(Advanced) is selected by default and the only available algorithm.",
       ],
       newLoc: true,
       tooltipTarget: algoMenuPanelRef,
@@ -32,17 +35,29 @@ export function createTooltipPages(ref: OnboardingRefs): TooltipPage[] {
       arrowRotation: 90,
       arrowRelDistance: { x: -5, y: 10 },
     },
+    // c>
+    //   title: "Algorithm List",
+    //   text: [
+    //     "For now, you may pick one algorithm from the Graph/Tree list.",
+    //     "Pick one.",
+    //   ],
+    //   newLoc: false,
+    //   tooltipTarget: algoMenuPanelRef,
+    //   tooltipPos: { x: 250, y: -100 },
+    //   arrowRotation: 90,
+    //   arrowRelDistance: { x: -5, y: 10 },
+    // },
     {
-      title: "Algorithm List",
+      title: "Scene Canvas",
       text: [
-        "For now, you may pick one algorithm from the Graph/Tree list.",
-        "Pick one.",
+        "This is where the nodes and edges are displayed.",
+        "You can hold left mouse button to pan, and scroll to zoom in and out.",
       ],
-      newLoc: false,
-      tooltipTarget: algoMenuPanelRef,
-      tooltipPos: { x: 250, y: -100 },
-      arrowRotation: 90,
-      arrowRelDistance: { x: -5, y: 10 },
+      newLoc: true,
+      tooltipTarget: canvasRef,
+      tooltipPos: { x: -800, y: -200 },
+      arrowRotation: -90,
+      arrowRelDistance: { x: 25, y: 10 },
     },
     {
       title: "Controls Panel",
@@ -81,15 +96,34 @@ export function createTooltipPages(ref: OnboardingRefs): TooltipPage[] {
       arrowRelDistance: { x: 10, y: -3 },
     },
     {
-      title: "Code Editor",
+      title: "Controls Panel",
+      text: ["You can set the root node by using the dropdown menu."],
+      newLoc: false,
+      tooltipTarget: settingsPanelRef,
+      tooltipPos: { x: -550, y: -350 },
+      arrowRotation: -90,
+      arrowRelDistance: { x: 25, y: 5 },
+    },
+    {
+      title: "Start The Algorithm",
       text: [
-        "This is where the algorithm's code is displayed and then highlighted step wise during execution",
+        "Press Start to begin the traversal, then Step to go through a single iteration.",
       ],
+      targetCOverride: {
+        right: 0.8,
+        left: 1,
+        top: 1,
+        bottom: 1,
+        x: 0,
+        y: 0,
+        height: 0,
+        width: 0,
+      },
       newLoc: true,
-      tooltipTarget: codePanelRef,
-      tooltipPos: { x: 0, y: -700 },
-      arrowRotation: 0,
-      arrowRelDistance: { x: 10, y: 25 },
+      tooltipTarget: navbarRef,
+      tooltipPos: { x: 0, y: 100 },
+      arrowRotation: 180,
+      arrowRelDistance: { x: 10, y: -3 },
     },
     {
       title: "DFS Stack",
@@ -102,6 +136,29 @@ export function createTooltipPages(ref: OnboardingRefs): TooltipPage[] {
       tooltipPos: { x: 200, y: -500 },
       arrowRotation: 45,
       arrowRelDistance: { x: -5, y: 20 },
+    },
+    {
+      title: "Graph View",
+      text: [
+        "This is the adjacency matrix.",
+        "Here you will be able to see the nodes and the edges connecting them.",
+      ],
+      newLoc: true,
+      tooltipTarget: infoPanel2Ref,
+      tooltipPos: { x: -600, y: -600 },
+      arrowRotation: -45,
+      arrowRelDistance: { x: 22.5, y: 20 },
+    },
+    {
+      title: "Code Editor",
+      text: [
+        "This is where the algorithm's code is displayed and then highlighted step wise during execution",
+      ],
+      newLoc: true,
+      tooltipTarget: codePanelRef,
+      tooltipPos: { x: 0, y: -700 },
+      arrowRotation: 0,
+      arrowRelDistance: { x: 10, y: 25 },
     },
   ];
 }

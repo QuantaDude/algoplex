@@ -97,6 +97,7 @@ export default function Tooltip({
               page.tooltipTarget.current.getBoundingClientRect().y,
             width: page.tooltipTarget.current.getBoundingClientRect().width,
             height: page.tooltipTarget.current.getBoundingClientRect().height,
+            zIndex: 1001,
           }}
         ></div>
       )}
@@ -114,6 +115,7 @@ export default function Tooltip({
               page.subHighlightTarget.current.getBoundingClientRect().width,
             height:
               page.subHighlightTarget.current.getBoundingClientRect().height,
+            zIndex: 1001,
           }}
         ></div>
       )}

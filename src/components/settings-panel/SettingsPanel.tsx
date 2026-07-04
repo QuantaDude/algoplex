@@ -86,7 +86,10 @@ export default function SettingsPanel({
       ref={ref}
       className="right panel"
       onClick={(e: MouseEvent) => {
-        if (!checkClickPos(e.clientX, e.clientY)) {setNodeListVisibility(false); wasmModule.current._set_hover_state(false, 0)}
+        if (!checkClickPos(e.clientX, e.clientY)) {
+          setNodeListVisibility(false);
+          wasmModule.current._set_hover_state(false, 0);
+        }
       }}
     >
       <div className="title">
@@ -137,6 +140,7 @@ export default function SettingsPanel({
           );
         })}
       </div>
+
       <br />
       <br />
       <br />
@@ -147,7 +151,10 @@ export default function SettingsPanel({
             <button
               type="button"
               className="dropdown-btn"
-              onClick={() => setNodeListVisibility(!nodeListVisibility)}
+              onClick={() => {
+                setNodeListVisibility(!nodeListVisibility);
+                wasmModule.current._save_camera_pos();
+              }}
             >
               {`${rootNode.data}(${rootNode.node})`}
               <svg
@@ -174,6 +181,7 @@ export default function SettingsPanel({
                     }}
                     onClick={() => {
                       wasmModule.current._set_root_node(node.node);
+            wasmModule.current._save_camera_pos();
                       wasmModule.current._set_hover_state(false, node.node);
                       setNodeListVisibility(!nodeListVisibility);
                     }}
