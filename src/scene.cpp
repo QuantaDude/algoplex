@@ -357,6 +357,7 @@ void AV::Scene::update_input_mode() {
 }
 
 void AV::Scene::input() {
+
   mouse_world_pos = GetScreenToWorld2D(GetMousePosition(), g_camera);
 
   switch (m_input_mode) {
@@ -609,29 +610,29 @@ void AV::Scene::input() {
 
   case InteractionMode::EdgeSelect:
 
-  if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
-    for (size_t i = 0; i < edges.size(); i++) {
-      if (IsMouseHoveringEdge(mouse_world_pos, nodes[edges[i].from].pos,
-                              nodes[edges[i].to].pos)) {
-        hoveredEdgeIdx = i;
-        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) &&
-            selected_edge_origin == nodes.end()) {
-          m_input_mode = InteractionMode::EdgeEdit;
-          main_mode = 2;
-          sub_mode = 2;
+    if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
+      for (size_t i = 0; i < edges.size(); i++) {
+        if (IsMouseHoveringEdge(mouse_world_pos, nodes[edges[i].from].pos,
+                                nodes[edges[i].to].pos)) {
+          hoveredEdgeIdx = i;
+          if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) &&
+              selected_edge_origin == nodes.end()) {
+            m_input_mode = InteractionMode::EdgeEdit;
+            main_mode = 2;
+            sub_mode = 2;
 
-          set_mode(main_mode, sub_mode);
-          selected_edge_origin = nodes.begin() + (edges.begin() + i)->from;
-          std::vector<Edge>::iterator it = edges.begin();
-          it += i;
-          edges.erase(it);
-          hoveredEdgeIdx = SIZE_MAX;
+            set_mode(main_mode, sub_mode);
+            selected_edge_origin = nodes.begin() + (edges.begin() + i)->from;
+            std::vector<Edge>::iterator it = edges.begin();
+            it += i;
+            edges.erase(it);
+            hoveredEdgeIdx = SIZE_MAX;
+          }
+
+          return;
         }
-
-        return;
       }
     }
-      }
     break;
   case InteractionMode::None:
   default:

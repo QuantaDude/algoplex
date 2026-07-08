@@ -74,7 +74,10 @@ void App::setState(AV::AppState new_state) { g_app_state = new_state; }
 
 void App::run(void) {
   if (App::g_app_state != AV::QUIT) {
-    current_state->input();
+    if (App::mouse_hovering == true) {
+
+      current_state->input();
+    }
     current_state->update(&resolution);
     current_state->draw(&resolution);
   } else {
@@ -135,5 +138,9 @@ extern "C" void notify_algorithms() {
   }
   json += "]";
   js_register_algorithms(json.c_str());
+}
+
+extern "C" void set_receive_inputs(bool mouseHover) {
+  App::getInstance().mouse_hovering = mouseHover;
 }
 #endif

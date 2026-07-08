@@ -21,6 +21,8 @@ class App {
   App &operator=(const App &) = delete;
 
 public:
+
+  bool mouse_hovering = true;
   static App *createInstance(int width, int height);
   static App &getInstance();
 
@@ -37,4 +39,5 @@ public:
   static void runWrapper();
 };
 
+extern "C" void set_receive_inputs(bool);
 extern "C" void notify_algorithms();

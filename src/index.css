@@ -115,7 +115,10 @@ body {
 #container.left-hidden {
   --left-width: 0px;
 }
-
+#container > * {
+  min-width: 0;
+  min-height: 0;
+}
 /* ── Navbar ─────────────────────────────────────────── */
 .navbar {
   grid-area: navbar;

@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { saveAs } from "file-saver";
 import AlgoVisualizer from "./wasm/algo-visualizer.js";
 import Navbar from "./components/navbar/Navbar.js";
@@ -116,7 +122,11 @@ function App() {
         ref={canvasRef}
         style={{ width: "100%", height: "100%" }}
         onContextMenu={(e) => e.preventDefault()}
-      />
+        onMouseEnter={() => moduleRef.current?._set_receive_inputs(true)}
+        onMouseLeave={() => moduleRef.current?._set_receive_inputs(false)}
+      >
+        {moduleRef.current == null ? <h3>Loading...</h3> : undefined}
+      </canvas>
       {refsReady && showTooltip && (
         <Tooltip
           pages={tooltipPages}
