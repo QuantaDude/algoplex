@@ -124,10 +124,8 @@ function App() {
         onContextMenu={(e) => e.preventDefault()}
         onMouseEnter={() => moduleRef.current?._set_receive_inputs(true)}
         onMouseLeave={() => moduleRef.current?._set_receive_inputs(false)}
-      >
-        {moduleRef.current == null ? <h3>Loading...</h3> : undefined}
-      </canvas>
-      {refsReady && showTooltip && (
+      />
+          {refsReady && showTooltip && (
         <Tooltip
           pages={tooltipPages}
           onClose={() => {
