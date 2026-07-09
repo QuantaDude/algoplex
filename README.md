@@ -1,3 +1,5 @@
+> NOTE: I am currently rewriting my C++ code in the refactor/cpp-core branch and integrating pyodide in feature/pyodide-integration branch.
+
 # AlgoPlex
 
 **Making complex algorithms simple.**
@@ -12,14 +14,14 @@ The visualization engine runs in C++ and is compiled to WebAssembly, while React
 
 ## Features
 
-- ✅ Visualize graph and tree data structures
-- ✅ Create, edit, and remove nodes directly on the canvas
-- ✅ Create, edit, and remove edges between nodes
-- ✅ Step through algorithm execution
-- ✅ Interactive canvas navigation and manipulation
-- 🚧 Pseudocode highlighting and execution tracking
-- 🚧 Runtime algorithm editing and debugging
-- 🚧 Additional visualizations and learning tools
+- [x] Visualize graph and tree data structures
+- [x] Create, edit, and remove nodes directly on the canvas
+- [x] Create, edit, and remove edges between nodes
+- [x] Step through algorithm execution
+- [x] Interactive canvas navigation and manipulation
+- [ ] Pseudocode highlighting and execution tracking
+- [ ] Runtime algorithm editing and debugging
+- [ ] Additional visualizations and learning tools
 
 ---
 
@@ -27,10 +29,10 @@ The visualization engine runs in C++ and is compiled to WebAssembly, while React
 
 ### Graph Algorithms
 
-- ✅ Depth First Search (DFS)
-- 🚧 Breadth First Search (BFS)
-- 🚧 Traveling Salesman Problem (TSP)
-- 🚧 More coming soon
+- [x] Depth First Search (DFS)
+- [ ] Breadth First Search (BFS)
+- [ ] Traveling Salesman Problem (TSP)
+- [ ] More coming soon
 
 ---
 
