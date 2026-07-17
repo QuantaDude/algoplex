@@ -1,8 +1,8 @@
+#include "scene.hpp"
 #include "events.hpp"
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
-#include "scene.hpp"
 #include "state.hpp"
 #include "web.hpp"
 #include <cstdio>
@@ -148,7 +148,10 @@ int get_current_algorithm_id() { return AV::scene_ptr->getCurrentAlgoId(); }
 AV::Scene::Scene(Font *font)
 
     : a_id(AlgorithmId::DFS_A), algorithm_state(AV::Idle), g_camera({{0}}),
-      m_font(font), m_input_mode(InteractionMode::None) {}
+      m_font(font), m_input_mode(InteractionMode::None) {
+
+  EM_ASM({ console.log("pointer", $0); }, (void *)m_font);
+}
 
 namespace AV {
 Scene *scene_ptr = nullptr;
@@ -158,8 +161,7 @@ void AV::Scene::init() {
   AV::scene_ptr = this;
   lastKey = "";
 
-  IVector2 *resolution = App::getInstance().getResolution();
-
+  IVector2 *resolution = App::m_GetInstance().m_GetResolution();
   g_camera.target = {0, 0};
   g_camera.offset = {resolution->x * 0.5f, resolution->y * 0.5f};
   g_camera.zoom = 1.5f;
@@ -1065,4 +1067,3 @@ void AV::Scene::gotoPos(IVector2 *resolution) {
 void AV::Scene::ToggleKeybindOverlay() { show_key_overlay = !show_key_overlay; }
 
 int AV::Scene::getCurrentAlgoId() { return std::to_underlying(a_id); }
-

@@ -1,43 +1,42 @@
 #pragma once
+#include "arena.hpp"
 #include "raylib.h"
 #include "scene.hpp"
 #include "scene_registry.hpp"
 #include "state.hpp"
+#include <cstdlib>
 #include <memory>
 #if defined(PLATFORM_WEB)
 #include "web.hpp"
 #endif
 
-class App {
-  static App *instance;
-  IVector2 resolution;
-  Font g_font;
-  static AV::AppState g_app_state;
-  std::unique_ptr<AV::State> current_state;
-  App() {}
-  App(int width, int height, const char *font = "");
+struct App {
+  Arena m_arena;
 
+  static App *instance;
+  AV::State *current_scene;
+
+  IVector2 m_resolution;
+  Font m_font;
+  AV::AppState m_app_state;
+
+  bool m_mouse_hovering = true;
+
+  void m_LoadScene();
+  void m_Run();
+  void m_Shutdown();
+
+  static void m_RunWrapper();
+  static App &m_GetInstance();
+  IVector2 *m_GetResolution();
+  App() {}
+  App(IVector2 resolution, const char *font = "");
+  ~App();
   App(const App &) = delete;
   App &operator=(const App &) = delete;
-
-public:
-
-  bool mouse_hovering = true;
-  static App *createInstance(int width, int height);
-  static App &getInstance();
-
-  void shutdown();
-  Font &getDefaultFont();
-  IVector2 *getResolution();
-#if defined(PLATFORM_WEB)
-  void initWeb();
-#endif
-
-  void setState(std::unique_ptr<AV::State> state);
-  void setState(AV::AppState);
-  void run(void);
-  static void runWrapper();
 };
+
+void initApp(App *app, IVector2 resolution, const char *font = "");
 
 extern "C" void set_receive_inputs(bool);
 extern "C" void notify_algorithms();

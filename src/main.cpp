@@ -6,21 +6,19 @@
 #include <string>
 #include <web.hpp>
 int main() {
-  int width{1920}, height{1080};
-
 #if defined(PLATFORM_WEB)
   // emscripten_get_canvas_element_size("#canvas", &width, &height);
   //std::string str = std::to_string((int)width);
   //print_console(str.c_str());
 #endif
-
-  App *instance = App::createInstance(width, height);
-  if (!instance) {
+  App app;
+  initApp(&app, {.x = 0, .y = 0});
+  if (!app.instance) {
     TRACELOG(LOG_FATAL, "Failed to create window. Exiting");
     return -1;
   }
 #if defined(PLATFORM_WEB)
-  instance->initWeb();
+  // app->initWeb();
 #else
   SetTargetFPS(60);
 

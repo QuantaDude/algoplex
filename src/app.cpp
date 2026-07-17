@@ -1,10 +1,12 @@
 #include "menu.hpp"
 #include "raylib.h"
+#include "scene.hpp"
 #include "state.hpp"
+#include "utils.h"
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <string>
-#include <utility>
 #if defined(PLATFORM_WEB)
 #include "web.hpp"
 #include <emscripten.h>
@@ -14,111 +16,127 @@
 #include <memory>
 
 App *App::instance = nullptr;
-AV::AppState App::g_app_state;
 
-App *App::createInstance(int width, int height) {
-  if (instance == nullptr) {
-    // if (emscripten_run_preload_plugins(
-    //         "/home/abhirup/Documents/algo-visualizer/resources/font/"
-    //         "alpha_beta.png",
-    //         onPreloadSuccess("font.png"), onPreloadSuccess("font.png"))) {
-    //   print_console("sucess loading font");
-    // }
-    // list_files();
-
-    // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    double a, b;
-    emscripten_get_element_css_size("#canvas", &a, &b);
-    // print_console_float(a);
-    // emscripten_get_canvas_element_size("#canvas", &width, &height);
-    double dpr = emscripten_get_device_pixel_ratio();
-    width = (int)(a * dpr);
-    height = (int)(b * dpr);
-    InitWindow(width, height, "AlgoPlex");
-    SetExitKey(KEY_NULL);
-    if (IsWindowReady()) {
-
-      instance = new App(width, height, RESOURCES_PATH "font/alpha_beta.png");
-      instance->setState(
-          std::make_unique<AV::Scene>(&instance->getDefaultFont()));
-      // instance->current_state->init();
-#if defined(PLATFORM_WEB)
-      // emscripten_get_canvas_element_size("#canvas", &width, &height);
-#endif
-    }
-  }
-  return instance;
-}
-
-App::App(int width, int height, const char *font)
-    : resolution({.x = width, .y = height}), g_font(LoadFont(font)) {
-  g_app_state = AV::SCENE;
+App::App(IVector2 resolution, const char *font)
+    : m_resolution({.x = resolution.x, .y = resolution.y}),
+      m_font(LoadFont(font)), m_mouse_hovering(true) {
   // createInstance(width, height);
 }
 
-App &App::getInstance() {
-  if (instance == nullptr) {
-    instance = new App(1280, 720);
-  }
-  return *instance;
-}
-Font &App::getDefaultFont() { return this->g_font; }
+App::~App() {
+  void *buffer = this->m_arena.buffer;
+  arena_free(&this->m_arena);
+  // unload scene before freeing the memory
 
-IVector2 *App::getResolution() { return &resolution; }
+  free(buffer);
 
-void App::setState(std::unique_ptr<AV::State> state) {
-  current_state = std::move(state);
-  // current_state->init();
-}
-void App::setState(AV::AppState new_state) { g_app_state = new_state; }
-
-void App::run(void) {
-  if (App::g_app_state != AV::QUIT) {
-    if (App::mouse_hovering == true) {
-
-      current_state->input();
-    }
-    current_state->update(&resolution);
-    current_state->draw(&resolution);
-  } else {
-    // this->setState(std::make_unique<Menu>("Algorithm Visualizer"));
-    App::shutdown();
-  }
-}
-void App::shutdown() {
-
-  current_state.reset();
-
-  UnloadFont(g_font);
-
-  delete instance;
-  instance = nullptr;
-
-  CloseWindow();
-#if defined(PLATFORM_WEB)
+  //unload resources
+  UnloadFont(this->m_font);
 
   emscripten_pause_main_loop();
   emscripten_cancel_main_loop();
   emscripten_exit_with_live_runtime();
-  // emscripten_force_exit(0);
+  CloseWindow();
+}
 
+void initApp(App *app, IVector2 resolution, const char *font) {
+
+  //the entire scene will be in this memory
+  void *mem_buffer = malloc(uint64_t(10ULL * 1024 * 1024));
+  arena_init(&app->m_arena, mem_buffer, 10ULL * 1024 * 1024);
+
+  if (resolution.x == 0 && resolution.y == 0) {
+
+#if defined(PLATFORM_WEB)
+    double css_x, css_y;
+
+    emscripten_get_element_css_size("#canvas", &css_x, &css_y);
+
+    double dpr = emscripten_get_device_pixel_ratio();
+
+    app->m_resolution = {.x = (int)(css_x * dpr), .y = (int)(css_y * dpr)};
+
+    app->m_mouse_hovering = true;
+
+#endif
+
+  } else {
+
+    app->m_resolution = resolution;
+  }
+
+  //Load default scene here.MENU is just an empty scene;
+  app->m_app_state = AV::AppState::MENU;
+  App::instance = app;
+
+  notify_algorithms();
+
+  InitWindow(app->m_resolution.x, app->m_resolution.y, "AlgoPlex");
+  SetExitKey(KEY_NULL);
+
+  app->m_font = LoadFont(RESOURCES_PATH "font/alpha_beta.png");
+  if (IsWindowReady()) {
+    //allocate memory to load empty scene;
+    app->current_scene = arena_create<AV::Scene>(&app->m_arena, &app->m_font);
+    app->current_scene->init();
+    // app->instance->run();
+    notify_algorithms();
+    emscripten_set_main_loop(app->m_RunWrapper, 60, 1);
+  }
+}
+
+App &App::m_GetInstance() { return *instance; }
+
+IVector2 *App::m_GetResolution() { return &m_resolution; }
+
+// void App::setState(std::unique_ptr<AV::State> state) {
+//   current_state = std::move(state);
+//   // current_state->init();
+// }
+// void App::setState(AV::AppState new_state) { g_app_state = new_state; }
+
+void App::m_Run(void) {
+  if (App::m_app_state != AV::QUIT) {
+    if (App::m_mouse_hovering == true) {
+
+      current_scene->input();
+    }
+    current_scene->update(&m_resolution);
+    current_scene->draw(&m_resolution);
+  } else {
+    // this->setState(std::make_unique<Menu>("Algorithm Visualizer"));
+    App::m_Shutdown();
+  }
+}
+void App::m_Shutdown() {
+  if (current_scene) {
+    // current_scene->unload();
+    // current_scene->~Scene();
+  }
+  UnloadFont(m_font);
+  instance = nullptr;
+  CloseWindow();
+#if defined(PLATFORM_WEB)
+  emscripten_pause_main_loop();
+  emscripten_cancel_main_loop();
+  emscripten_exit_with_live_runtime();
 #endif
 }
 
-void App::runWrapper() { getInstance().run(); }
+void App::m_RunWrapper() { App::instance->m_Run(); }
 
 #if defined(PLATFORM_WEB)
-void App::initWeb() {
-
-  // Need to return EventDescriptors from init that I will dispatch after I set
-  // the main loop, so that the wasm module has the required functions that will
-  // be used by react.
-  current_state->init();
-
-  notify_algorithms();
-  emscripten_set_main_loop(runWrapper, 60, 1);
-}
-
+// void App::initWeb() {
+//
+//   // Need to return EventDescriptors from init that I will dispatch after I set
+//   // the main loop, so that the wasm module has the required functions that will
+//   // be used by react.
+//   current_scene->init();
+//
+//   notify_algorithms();
+//   emscripten_set_main_loop(m_RunWrapper, 60, 1);
+// }
+//
 extern "C" void notify_algorithms() {
   std::string json = "[";
 
@@ -141,6 +159,6 @@ extern "C" void notify_algorithms() {
 }
 
 extern "C" void set_receive_inputs(bool mouseHover) {
-  App::getInstance().mouse_hovering = mouseHover;
+  App::m_GetInstance().m_mouse_hovering = mouseHover;
 }
 #endif
