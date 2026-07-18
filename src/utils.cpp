@@ -167,18 +167,3 @@ const char *getKeyName() {
   }
   return lastKey;
 }
-
-void initCells(bool *cells) {
-  int startR = 25, startC = 25;
-
-  cells[(startR + 0) * C_CELLS + (startC + 10)] = true;
-  cells[(startR + 0) * C_CELLS + (startC + 9)] = true;
-
-  cells[(startR + 0) * C_CELLS + (startC + 8)] = true;
-  cells[(startR + 1) * C_CELLS + (startC + 8)] = true;
-
-  cells[(startR + 2) * C_CELLS + (startC + 8)] = true;
-
-  cells[(startR + 3) * C_CELLS + (startC + 9)] = true;
-}
-

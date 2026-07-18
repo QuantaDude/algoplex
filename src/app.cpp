@@ -1,6 +1,6 @@
+#include "graph_scene.hpp"
 #include "menu.hpp"
 #include "raylib.h"
-#include "scene.hpp"
 #include "state.hpp"
 #include "utils.h"
 #include <cstddef>
@@ -66,7 +66,7 @@ void initApp(App *app, IVector2 resolution, const char *font) {
   }
 
   //Load default scene here.MENU is just an empty scene;
-  app->m_app_state = AV::AppState::MENU;
+  app->m_app_state = AppState::MENU;
   App::instance = app;
 
   notify_algorithms();
@@ -77,7 +77,7 @@ void initApp(App *app, IVector2 resolution, const char *font) {
   app->m_font = LoadFont(RESOURCES_PATH "font/alpha_beta.png");
   if (IsWindowReady()) {
     //allocate memory to load empty scene;
-    app->current_scene = arena_create<AV::Scene>(&app->m_arena, &app->m_font);
+    app->current_scene = arena_create<GraphScene>(&app->m_arena, &app->m_font);
     app->current_scene->init();
     // app->instance->run();
     notify_algorithms();
@@ -89,14 +89,14 @@ App &App::m_GetInstance() { return *instance; }
 
 IVector2 *App::m_GetResolution() { return &m_resolution; }
 
-// void App::setState(std::unique_ptr<AV::State> state) {
+// void App::setState(std::unique_ptr<State> state) {
 //   current_state = std::move(state);
 //   // current_state->init();
 // }
-// void App::setState(AV::AppState new_state) { g_app_state = new_state; }
+// void App::setState(AppState new_state) { g_app_state = new_state; }
 
 void App::m_Run(void) {
-  if (App::m_app_state != AV::QUIT) {
+  if (App::m_app_state != QUIT) {
     if (App::m_mouse_hovering == true) {
 
       current_scene->input();

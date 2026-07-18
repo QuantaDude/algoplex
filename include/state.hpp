@@ -1,8 +1,17 @@
 #pragma once
 #include "utils.hpp"
-namespace AV {
-typedef enum { MENU = 0, SCENE, QUIT } AppState;
-typedef enum AlgorithmState { Idle, Stepping, Running, Done } AlgorithmState;
+
+typedef enum {
+  MENU = 0,
+  SCENE,
+  QUIT
+} AppState;
+typedef enum AlgorithmState {
+  Idle,
+  Stepping,
+  Running,
+  Done
+} AlgorithmState;
 // enum class AlgorithmState {Idle, Stepping, Running, Done};
 class State {
   AppState state;
@@ -14,4 +23,3 @@ public:
   virtual void update(IVector2 *) = 0;
   virtual void input() {};
 };
-} // namespace AV

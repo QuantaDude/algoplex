@@ -18,13 +18,7 @@
 #import <emscripten/em_types.h>
 #endif // PLATOFRM_WEB
 
-typedef struct {
-  float m[16];
-} Mat4;
-
-namespace AV {
-
-class Scene : public State {
+class GraphScene : public State {
   AlgorithmId a_id;
 
 public:
@@ -33,7 +27,6 @@ public:
     EXIT
   };
 
-  int VIRTUAL_W = 1920, VIRTUAL_H = 1080;
   RenderTexture2D target;
   bool update_res = false;
   bool show_key_overlay = true;
@@ -110,7 +103,7 @@ public:
   size_t hoveredEdgeIdx = SIZE_MAX;
   size_t hoveredNodeIdx = SIZE_MAX;
 
-  Scene(Font *);
+  GraphScene(Font *);
   void init() override;
   void input() override;
   void update_input_mode();
@@ -139,18 +132,16 @@ public:
   const char *getRootNodeJSON();
 
   void traverse();
+  static GraphScene *scene_ptr;
 };
-
-extern AV::Scene *scene_ptr;
-}; // namespace AV
 
 #ifdef PLATFORM_WEB
 
 extern "C" {
-AV::Scene *EMSCRIPTEN_KEEPALIVE get_scene_ptr();
+GraphScene *EMSCRIPTEN_KEEPALIVE get_scene_ptr();
 void EMSCRIPTEN_KEEPALIVE reset_scene();
 void EMSCRIPTEN_KEEPALIVE toggle_keybind_overlay();
-void EMSCRIPTEN_KEEPALIVE update_mode(AV::Scene *, int, int);
+void EMSCRIPTEN_KEEPALIVE update_mode(GraphScene *, int, int);
 void EMSCRIPTEN_KEEPALIVE on_resize();
 void EMSCRIPTEN_KEEPALIVE set_root_node(u_int32_t);
 void EMSCRIPTEN_KEEPALIVE set_node_val(u_int32_t, int);
@@ -164,8 +155,8 @@ const char *EMSCRIPTEN_KEEPALIVE get_node_list_json();
 const char *EMSCRIPTEN_KEEPALIVE get_root_node_json();
 
 int get_current_algorithm_id();
-void start_algo(AV::Scene *);
-void step_algo(AV::Scene *);
+void start_algo(GraphScene *);
+void step_algo(GraphScene *);
 }
 
 #endif // PLATFORM_WEB

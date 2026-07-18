@@ -1,7 +1,6 @@
 #pragma once
 #include "arena.hpp"
 #include "raylib.h"
-#include "scene.hpp"
 #include "scene_registry.hpp"
 #include "state.hpp"
 #include <cstdlib>
@@ -14,11 +13,11 @@ struct App {
   Arena m_arena;
 
   static App *instance;
-  AV::State *current_scene;
+  State *current_scene;
 
   IVector2 m_resolution;
   Font m_font;
-  AV::AppState m_app_state;
+  AppState m_app_state;
 
   bool m_mouse_hovering = true;
 

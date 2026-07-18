@@ -1,4 +1,3 @@
-#include "scene.hpp"
 #include <cassert>
 #include <cstring>
 #include <stddef.h>

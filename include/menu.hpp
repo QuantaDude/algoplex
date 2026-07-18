@@ -3,12 +3,10 @@
 #include "raylib.h"
 #include "state.hpp"
 
-class Menu : public AV::State {
+class Menu : public State {
   const char *m_title;
   bool startScene = false;
   Font &m_font;
-
-  bool cells[R_CELLS * C_CELLS];
 
 public:
   Menu(const char *);

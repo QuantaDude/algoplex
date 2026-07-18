@@ -1,4 +1,4 @@
-#include "scene.hpp"
+#include "graph_scene.hpp"
 #include "events.hpp"
 #include "raylib.h"
 #include "raymath.h"
@@ -19,113 +19,75 @@
 void set_mode(int a, int b) {}
 #endif // !PLATFORM_WEB
 
-Mat4 Mat4Identity(void) {
-  Mat4 m = {0};
-
-  m.m[0] = 1.0f;
-  m.m[5] = 1.0f;
-  m.m[10] = 1.0f;
-  m.m[15] = 1.0f;
-
-  return m;
-}
-Mat4 Mat4Translate(float x, float y, float z) {
-  Mat4 m = Mat4Identity();
-
-  m.m[12] = x;
-  m.m[13] = y;
-  m.m[14] = z;
-
-  return m;
-}
-
-Mat4 Mat4RotateX(float radians) {
-  Mat4 m = Mat4Identity();
-
-  float c = cosf(radians);
-  float s = sinf(radians);
-
-  m.m[5] = c;
-  m.m[6] = s;
-  m.m[9] = -s;
-  m.m[10] = c;
-
-  return m;
-}
-Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
-  Mat4 r = {0};
-
-  for (int row = 0; row < 4; row++) {
-    for (int col = 0; col < 4; col++) {
-      for (int k = 0; k < 4; k++) {
-        r.m[col + row * 4] += a.m[k + row * 4] * b.m[col + k * 4];
-      }
-    }
-  }
-
-  return r;
-}
-
-void start_algo(AV::Scene *scene) {
-  scene->algorithm_state = AV::Running;
+void start_algo(GraphScene *scene) {
+  scene->algorithm_state = Running;
   while (!scene->dfs_stack.empty())
     scene->dfs_stack.pop();
 
   scene->visited.assign(scene->nodes.size(), false);
 
   if (!scene->nodes.empty()) {
-    scene->dfs_stack.push({scene->root_id, AV::Scene::DFSPhase::ENTER}); // root
+    scene->dfs_stack.push(
+        {scene->root_id, GraphScene::DFSPhase::ENTER}); // root
 
     EventDescriptor e(EventAction::AlgoStateUpdate, EventTarget::Stack);
     dispatchSceneEvent(e);
   }
 }
-void step_algo(AV::Scene *scene) {
-  scene->algorithm_state = AV::Stepping;
+void step_algo(GraphScene *scene) {
+  scene->algorithm_state = Stepping;
   scene->traverse();
 
   EventDescriptor e(EventAction::AlgoStateUpdate, EventTarget::Stack);
   dispatchSceneEvent(e);
 }
 
-void update_mode(AV::Scene *ptr, int main, int sub) {
+void update_mode(GraphScene *ptr, int main, int sub) {
 
   ptr->main_mode = main;
   ptr->sub_mode = sub;
 }
 
-AV::Scene *get_scene_ptr() { return AV::scene_ptr; }
+GraphScene *get_scene_ptr() { return GraphScene::scene_ptr; }
 
-void on_resize(void) { AV::scene_ptr->update_res = true; }
-const char *get_stack_json() { return AV::scene_ptr->getStackJSON(); }
-const char *get_adj_json() { return AV::scene_ptr->getAdjJSON(); }
-const char *get_node_list_json() { return AV::scene_ptr->getNodeListJSON(); }
-const char *get_root_node_json() { return AV::scene_ptr->getRootNodeJSON(); }
+void on_resize(void) { GraphScene::scene_ptr->update_res = true; }
+const char *get_stack_json() { return GraphScene::scene_ptr->getStackJSON(); }
+const char *get_adj_json() { return GraphScene::scene_ptr->getAdjJSON(); }
+const char *get_node_list_json() {
+  return GraphScene::scene_ptr->getNodeListJSON();
+}
+const char *get_root_node_json() {
+  return GraphScene::scene_ptr->getRootNodeJSON();
+}
 
-void reset_scene() { return AV::scene_ptr->resetScene(); }
-void toggle_keybind_overlay() { AV::scene_ptr->ToggleKeybindOverlay(); }
-void set_root_node(u_int32_t idx) { AV::scene_ptr->setRootNode(idx); }
+void reset_scene() { return GraphScene::scene_ptr->resetScene(); }
+void toggle_keybind_overlay() { GraphScene::scene_ptr->ToggleKeybindOverlay(); }
+void set_root_node(u_int32_t idx) { GraphScene::scene_ptr->setRootNode(idx); }
 void set_node_val(u_int32_t node_id, int value) {
-  AV::scene_ptr->setNodeVal(node_id, value);
+  GraphScene::scene_ptr->setNodeVal(node_id, value);
 }
 void save_camera_pos() {
-  AV::scene_ptr->camera_old_offset = AV::scene_ptr->g_camera.offset;
+  GraphScene::scene_ptr->camera_old_offset =
+      GraphScene::scene_ptr->g_camera.offset;
 
-  AV::scene_ptr->camera_old_target = AV::scene_ptr->g_camera.target;
-  AV::scene_ptr->camera_old_zoom = AV::scene_ptr->g_camera.zoom;
+  GraphScene::scene_ptr->camera_old_target =
+      GraphScene::scene_ptr->g_camera.target;
+  GraphScene::scene_ptr->camera_old_zoom = GraphScene::scene_ptr->g_camera.zoom;
 }
 void set_camera_pos_to_old_pos() {
-  AV::scene_ptr->g_camera.offset = AV::scene_ptr->camera_old_offset;
-  AV::scene_ptr->g_camera.target = AV::scene_ptr->camera_old_target;
-  AV::scene_ptr->g_camera.zoom = AV::scene_ptr->camera_old_zoom;
+  GraphScene::scene_ptr->g_camera.offset =
+      GraphScene::scene_ptr->camera_old_offset;
+  GraphScene::scene_ptr->g_camera.target =
+      GraphScene::scene_ptr->camera_old_target;
+  GraphScene::scene_ptr->g_camera.zoom = GraphScene::scene_ptr->camera_old_zoom;
 
-  AV::scene_ptr->hoveredNodeIdx = SIZE_MAX;
+  GraphScene::scene_ptr->hoveredNodeIdx = SIZE_MAX;
   //gotoPos should check if the camera is already at the old pos and then set moveCamera to false in it;
 }
 
 void set_hover_state(bool hover, u_int32_t node_id) {
-  if (AV::scene_ptr->algorithm_state == AV::Running ||
-      AV::scene_ptr->algorithm_state == AV::Stepping) {
+  if (GraphScene::scene_ptr->algorithm_state == Running ||
+      GraphScene::scene_ptr->algorithm_state == Stepping) {
     return;
   }
 
@@ -133,32 +95,30 @@ void set_hover_state(bool hover, u_int32_t node_id) {
 
   if (!hover) {
 
-    AV::scene_ptr->hoveredNodeIdx = SIZE_MAX;
+    GraphScene::scene_ptr->hoveredNodeIdx = SIZE_MAX;
     //gotoPos will run in this condition and move the camera back to old pos;
 
   } else {
 
-    AV::scene_ptr->hoveredNodeIdx = AV::scene_ptr->id_to_node_idx[node_id];
+    GraphScene::scene_ptr->hoveredNodeIdx =
+        GraphScene::scene_ptr->id_to_node_idx[node_id];
   }
 
-  AV::scene_ptr->moveCamera = true;
+  GraphScene::scene_ptr->moveCamera = true;
 }
-int get_current_algorithm_id() { return AV::scene_ptr->getCurrentAlgoId(); }
-
-AV::Scene::Scene(Font *font)
-
-    : a_id(AlgorithmId::DFS_A), algorithm_state(AV::Idle), g_camera({{0}}),
-      m_font(font), m_input_mode(InteractionMode::None) {
-
-  EM_ASM({ console.log("pointer", $0); }, (void *)m_font);
+int get_current_algorithm_id() {
+  return GraphScene::scene_ptr->getCurrentAlgoId();
 }
 
-namespace AV {
-Scene *scene_ptr = nullptr;
-}
-void AV::Scene::init() {
+GraphScene::GraphScene(Font *font)
 
-  AV::scene_ptr = this;
+    : a_id(AlgorithmId::DFS_A), algorithm_state(Idle), g_camera({{0}}),
+      m_font(font), m_input_mode(InteractionMode::None) {}
+
+GraphScene *GraphScene::scene_ptr = nullptr;
+void GraphScene::init() {
+
+  scene_ptr = this;
   lastKey = "";
 
   IVector2 *resolution = App::m_GetInstance().m_GetResolution();
@@ -188,7 +148,7 @@ void AV::Scene::init() {
 
   // SetMouseScale(resolution->x / 300.0f, resolution->y / 150.0f);
 }
-void AV::Scene::draw(IVector2 *resolution) {
+void GraphScene::draw(IVector2 *resolution) {
   if (moveCamera && hoveredNodeIdx != SIZE_MAX) {
     gotoNode(resolution);
   } else if (moveCamera && hoveredNodeIdx == SIZE_MAX) {
@@ -231,7 +191,7 @@ void AV::Scene::draw(IVector2 *resolution) {
   }
 
   EndMode2D();
-  AV::Scene::drawUI(*resolution);
+  GraphScene::drawUI(*resolution);
 
   EndDrawing();
 
@@ -245,7 +205,7 @@ void AV::Scene::draw(IVector2 *resolution) {
 #endif
 }
 
-void AV::Scene::drawUI(IVector2 resolution) {
+void GraphScene::drawUI(IVector2 resolution) {
   SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 
   Vector2 mousePos = GetMousePosition();
@@ -328,7 +288,7 @@ void AV::Scene::drawUI(IVector2 resolution) {
   DrawText(getKeyName(), resolution.x - MeasureText(getKeyName(), 25) - 10,
            resolution.y - 30, 25, COLOR_TEXT);
 }
-void AV::Scene::update_input_mode() {
+void GraphScene::update_input_mode() {
   if (main_mode == 0) {
     m_input_mode = InteractionMode::None;
   } else if (main_mode == 1) {
@@ -358,7 +318,7 @@ void AV::Scene::update_input_mode() {
   }
 }
 
-void AV::Scene::input() {
+void GraphScene::input() {
 
   mouse_world_pos = GetScreenToWorld2D(GetMousePosition(), g_camera);
 
@@ -366,7 +326,7 @@ void AV::Scene::input() {
 
   case InteractionMode::NodeCreate:
 
-    if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
+    if (algorithm_state == Idle || algorithm_state == Done) {
       if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         bool clickedOnNode = false;
 
@@ -457,7 +417,7 @@ void AV::Scene::input() {
       }
     }
 
-    if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
+    if (algorithm_state == Idle || algorithm_state == Done) {
       if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_DELETE)) {
         if (selected_node != nodes.end() && nodes.begin() != nodes.end()) {
 
@@ -513,7 +473,7 @@ void AV::Scene::input() {
 
   case InteractionMode::EdgeCreate:
 
-    if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
+    if (algorithm_state == Idle || algorithm_state == Done) {
       if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
 
         for (size_t i = 0; i < nodes.size(); i++) {
@@ -565,7 +525,7 @@ void AV::Scene::input() {
   case InteractionMode::EdgeEdit:
     // Maybe highlight edge, allow delete
 
-    if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
+    if (algorithm_state == Idle || algorithm_state == Done) {
       for (size_t i = 0; i < edges.size(); i++) {
         if (IsMouseHoveringEdge(mouse_world_pos, nodes[edges[i].from].pos,
                                 nodes[edges[i].to].pos)) {
@@ -612,7 +572,7 @@ void AV::Scene::input() {
 
   case InteractionMode::EdgeSelect:
 
-    if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
+    if (algorithm_state == Idle || algorithm_state == Done) {
       for (size_t i = 0; i < edges.size(); i++) {
         if (IsMouseHoveringEdge(mouse_world_pos, nodes[edges[i].from].pos,
                                 nodes[edges[i].to].pos)) {
@@ -735,7 +695,7 @@ void AV::Scene::input() {
     selected_node = nodes.end();
     selected_edge_origin = nodes.end();
   }
-  if (algorithm_state == AV::Idle || algorithm_state == AV::Done) {
+  if (algorithm_state == Idle || algorithm_state == Done) {
     if (IsKeyPressed(KEY_A)) {
       m_input_mode = InteractionMode::NodeCreate;
       main_mode = 1;
@@ -821,8 +781,8 @@ void AV::Scene::input() {
   }
 }
 
-bool AV::Scene::IsMouseHoveringEdge(const Vector2 &mouse, const Vector2 &p1,
-                                    const Vector2 &p2, float thickness) {
+bool GraphScene::IsMouseHoveringEdge(const Vector2 &mouse, const Vector2 &p1,
+                                     const Vector2 &p2, float thickness) {
   // Vector from p1 to p2
   Vector2 edge = Vector2Subtract(p2, p1);
   Vector2 mouseVec = Vector2Subtract(mouse, p1);
@@ -843,7 +803,7 @@ bool AV::Scene::IsMouseHoveringEdge(const Vector2 &mouse, const Vector2 &p1,
   return dist <= thickness;
 }
 
-void AV::Scene::update(IVector2 *resolution) {
+void GraphScene::update(IVector2 *resolution) {
   if (update_res) {
 
     // What world point is currently at the center of the OLD canvas?
@@ -875,9 +835,9 @@ void AV::Scene::update(IVector2 *resolution) {
   }
 }
 
-void AV::Scene::traverse() {
+void GraphScene::traverse() {
   if (dfs_stack.empty()) {
-    algorithm_state = AV::Done;
+    algorithm_state = Done;
     return;
   }
 
@@ -909,7 +869,7 @@ void AV::Scene::traverse() {
   }
 }
 
-const char *AV::Scene::getStackJSON() {
+const char *GraphScene::getStackJSON() {
 
   static std::string result;
 
@@ -935,7 +895,7 @@ const char *AV::Scene::getStackJSON() {
   return result.c_str();
 }
 
-const char *AV::Scene::getAdjJSON() {
+const char *GraphScene::getAdjJSON() {
   static std::string result;
   result.clear();
 
@@ -968,7 +928,7 @@ const char *AV::Scene::getAdjJSON() {
   return result.c_str();
 }
 
-const char *AV::Scene::getNodeListJSON() {
+const char *GraphScene::getNodeListJSON() {
   static std::string result;
   result.clear();
 
@@ -989,7 +949,7 @@ const char *AV::Scene::getNodeListJSON() {
   return result.c_str();
 }
 
-const char *AV::Scene::getRootNodeJSON() {
+const char *GraphScene::getRootNodeJSON() {
 
   static std::string result;
   result.clear();
@@ -1002,17 +962,17 @@ const char *AV::Scene::getRootNodeJSON() {
   return result.c_str();
 }
 
-void AV::Scene::setRootNode(u_int32_t idx) {
+void GraphScene::setRootNode(u_int32_t idx) {
   root_id = idx;
   dispatchSceneEvent({EventAction::Edit, EventTarget::Node, root_id});
 }
 
-void AV::Scene::setNodeVal(u_int32_t node_id, int value) {
+void GraphScene::setNodeVal(u_int32_t node_id, int value) {
   nodes[id_to_node_idx[node_id]].data = value;
   dispatchSceneEvent({EventAction::Edit, EventTarget::Node, node_id});
 }
 
-void AV::Scene::resetScene() {
+void GraphScene::resetScene() {
   nodes.clear();
   edges.clear();
   id_to_node_idx.clear();
@@ -1038,7 +998,7 @@ static bool NearlyEqual(float a, float b, float eps = 0.01f) {
 static bool Vector2NearlyEqual(Vector2 a, Vector2 b, float eps = 0.01f) {
   return NearlyEqual(a.x, b.x, eps) && NearlyEqual(a.y, b.y, eps);
 }
-void AV::Scene::gotoNode(IVector2 *resolution) {
+void GraphScene::gotoNode(IVector2 *resolution) {
   Vector2 node_pos = nodes[id_to_node_idx[hoveredNodeIdx]].pos;
 
   g_camera.target = Vector2Lerp(g_camera.target, node_pos, 0.1f);
@@ -1053,7 +1013,7 @@ void AV::Scene::gotoNode(IVector2 *resolution) {
     moveCamera = false;
   }
 }
-void AV::Scene::gotoPos(IVector2 *resolution) {
+void GraphScene::gotoPos(IVector2 *resolution) {
   g_camera.target = Vector2Lerp(g_camera.target, camera_old_target, 0.1f);
   g_camera.zoom = Lerp(g_camera.zoom, camera_old_zoom, 0.05f);
   g_camera.offset = Vector2Lerp(g_camera.offset, camera_old_offset, 0.1f);
@@ -1064,6 +1024,8 @@ void AV::Scene::gotoPos(IVector2 *resolution) {
     moveCamera = false;
   }
 }
-void AV::Scene::ToggleKeybindOverlay() { show_key_overlay = !show_key_overlay; }
+void GraphScene::ToggleKeybindOverlay() {
+  show_key_overlay = !show_key_overlay;
+}
 
-int AV::Scene::getCurrentAlgoId() { return std::to_underlying(a_id); }
+int GraphScene::getCurrentAlgoId() { return std::to_underlying(a_id); }
