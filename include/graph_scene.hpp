@@ -4,8 +4,8 @@
 #include "debug_panel_fmt.hpp"
 #include "events.hpp"
 #include "raylib.h"
+#include "scene.hpp"
 #include "scene_registry.hpp"
-#include "state.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <stack>
@@ -18,7 +18,7 @@
 #import <emscripten/em_types.h>
 #endif // PLATOFRM_WEB
 
-class GraphScene : public State {
+class GraphScene : public Scene {
   AlgorithmId a_id;
 
 public:
@@ -45,12 +45,10 @@ public:
     }
   }
   AlgorithmState algorithm_state;
-  Camera2D g_camera;
   Vector2 camera_old_offset;
   float camera_old_zoom;
   Vector2 camera_old_target;
   Vector2 mouse_world_pos;
-  Font *m_font;
 
   // void GuiAlgoViz(BaseGuiState *state);
 

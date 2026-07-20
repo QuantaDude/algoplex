@@ -1,7 +1,7 @@
 #include "graph_scene.hpp"
 #include "menu.hpp"
 #include "raylib.h"
-#include "state.hpp"
+#include "scene.hpp"
 #include "utils.h"
 #include <cstddef>
 #include <cstdint>
@@ -74,10 +74,12 @@ void initApp(App *app, IVector2 resolution, const char *font) {
   InitWindow(app->m_resolution.x, app->m_resolution.y, "AlgoPlex");
   SetExitKey(KEY_NULL);
 
-  app->m_font = LoadFont(RESOURCES_PATH "font/alpha_beta.png");
+  char path[256];
+  snprintf(path, sizeof(path), "%sfont/%s", RESOURCES_PATH, font);
+  app->m_font = LoadFont(path);
   if (IsWindowReady()) {
     //allocate memory to load empty scene;
-    app->current_scene = arena_create<GraphScene>(&app->m_arena, &app->m_font);
+    app->current_scene = arena_create<Menu>(&app->m_arena, &app->m_font);
     app->current_scene->init();
     // app->instance->run();
     notify_algorithms();

@@ -12,7 +12,7 @@ int main() {
   //print_console(str.c_str());
 #endif
   App app;
-  initApp(&app, {.x = 0, .y = 0});
+  initApp(&app, {.x = 0, .y = 0}, "pixantiqua.png");
   if (!app.instance) {
     TRACELOG(LOG_FATAL, "Failed to create window. Exiting");
     return -1;

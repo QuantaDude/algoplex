@@ -1,21 +1,15 @@
 #pragma once
 #include "app.hpp"
 #include "raylib.h"
-#include "state.hpp"
+#include "scene.hpp"
 
-class Menu : public State {
-  const char *m_title;
-  bool startScene = false;
-  Font &m_font;
+class Menu : public Scene {
 
 public:
-  Menu(const char *);
+  Menu(Font *);
   void init() override;
   void draw(IVector2 *) override;
   void update(IVector2 *) override;
   void input() override;
   void DrawUI(IVector2);
-
-  void calcGOL(IVector2 *);
-  void drawCells(IVector2 *);
 };

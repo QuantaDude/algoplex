@@ -3,7 +3,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
-#include "state.hpp"
+#include "scene.hpp"
 #include "web.hpp"
 #include <cstdio>
 #include <format>
@@ -112,8 +112,8 @@ int get_current_algorithm_id() {
 
 GraphScene::GraphScene(Font *font)
 
-    : a_id(AlgorithmId::DFS_A), algorithm_state(Idle), g_camera({{0}}),
-      m_font(font), m_input_mode(InteractionMode::None) {}
+    : Scene(font), a_id(AlgorithmId::DFS_A), algorithm_state(Idle),
+      m_input_mode(InteractionMode::None) {}
 
 GraphScene *GraphScene::scene_ptr = nullptr;
 void GraphScene::init() {

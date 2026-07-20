@@ -1,8 +1,8 @@
 #pragma once
 #include "arena.hpp"
 #include "raylib.h"
+#include "scene.hpp"
 #include "scene_registry.hpp"
-#include "state.hpp"
 #include <cstdlib>
 #include <memory>
 #if defined(PLATFORM_WEB)
@@ -13,7 +13,7 @@ struct App {
   Arena m_arena;
 
   static App *instance;
-  State *current_scene;
+  Scene *current_scene;
 
   IVector2 m_resolution;
   Font m_font;
