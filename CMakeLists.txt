@@ -48,7 +48,7 @@ if(EMSCRIPTEN)
     )
 
     # pthreads disabled at compile time
-    add_compile_options(-s USE_PTHREADS=0)
+    add_compile_options(-s USE_PTHREADS=0 --bind)
 
     set(EM_LINK_FLAGS
         "-s ALLOW_MEMORY_GROWTH=1 \
@@ -60,13 +60,15 @@ if(EMSCRIPTEN)
          -s EXPORT_NAME='AlgoVisualizer' \
          -s EXIT_RUNTIME=0 \
          -s ASSERTIONS=0 \
+         --bind \
          --export-dynamic \
-         -s EXPORTED_FUNCTIONS='[\"_main\",\"_get_scene_ptr\",\"_update_mode\",\"_step_algo\",\"_start_algo\", \"_on_resize\", \"_get_stack_json\", \"_get_adj_json\", \"_get_root_node_json\", \"_get_node_list_json\", \"_set_root_node\", \"_toggle_keybind_overlay\", \"_reset_scene\", \"_set_hover_state\", \"_save_camera_pos\", \"_set_camera_pos_to_old_pos\", \"_set_receive_inputs\", \"_set_node_val\"]' \
+         -s EXPORTED_FUNCTIONS='[\"_main\",\"_update_mode\",\"_step_algo\",\"_start_algo\", \"_on_resize\", \"_get_stack_json\", \"_get_adj_json\", \"_get_root_node_json\", \"_get_node_list_json\", \"_set_root_node\", \"_toggle_keybind_overlay\", \"_reset_scene\", \"_set_hover_state\", \"_save_camera_pos\", \"_set_camera_pos_to_old_pos\", \"_set_receive_inputs\", \"_set_node_val\"]' \
          -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\", \"UTF8ToString\"]' \
          --preload-file ${CMAKE_SOURCE_DIR}/resources@/resources \
-         --use-preload-plugins \
-         --emit-tsd ${CMAKE_BINARY_DIR}/wasmmodule.d.ts"
-    )
+         --use-preload-plugins"
+        )
+
+         # --emit-tsd ${CMAKE_BINARY_DIR}/wasmmodule.d.ts"
 endif()
 
 # -------------------------------------------------------
@@ -169,9 +171,9 @@ if(EMSCRIPTEN)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_SOURCE_DIR}/src/wasm/${PROJECT_NAME}.data"
             "${CMAKE_SOURCE_DIR}/public/wasm/${PROJECT_NAME}.data"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_BINARY_DIR}/wasmmodule.d.ts"
-            "${CMAKE_SOURCE_DIR}/src/types/wasmmodule.d.ts"
+        # COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        #     "${CMAKE_BINARY_DIR}/wasmmodule.d.ts"
+        #     "${CMAKE_SOURCE_DIR}/src/types/wasmmodule.d.ts"
         COMMENT "Copying WASM artefacts → public/wasm/ and src/types/"
     )
 else()

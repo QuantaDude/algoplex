@@ -108,8 +108,7 @@ export default function SettingsPanel({
               className={majorMode === b.id ? "selected" : ""}
               onClick={(e) => {
                 setMajorMode(b.id);
-                const ptr = wasmModule.current._get_scene_ptr();
-                wasmModule.current._update_mode(ptr, b.id, minorMode);
+                wasmModule.current._update_mode(b.id, minorMode);
               }}
             >
               {b.name}
@@ -130,8 +129,7 @@ export default function SettingsPanel({
               className={minorMode === b.id && majorMode != 0 ? "selected" : ""}
               onClick={(e) => {
                 setMinorMode(b.id);
-                const ptr = wasmModule.current._get_scene_ptr();
-                wasmModule.current._update_mode(ptr, majorMode, b.id);
+                wasmModule.current._update_mode(majorMode, b.id);
               }}
               disabled={majorMode === 0 ? true : false}
             >
@@ -181,7 +179,7 @@ export default function SettingsPanel({
                     }}
                     onClick={() => {
                       wasmModule.current._set_root_node(node.node);
-            wasmModule.current._save_camera_pos();
+                      wasmModule.current._save_camera_pos();
                       wasmModule.current._set_hover_state(false, node.node);
                       setNodeListVisibility(!nodeListVisibility);
                     }}

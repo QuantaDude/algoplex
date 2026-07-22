@@ -19,73 +19,42 @@
 void set_mode(int a, int b) {}
 #endif // !PLATFORM_WEB
 
-void start_algo(GraphScene *scene) {
-  scene->algorithm_state = Running;
-  while (!scene->dfs_stack.empty())
-    scene->dfs_stack.pop();
+void GraphScene::resetAlgo() {}
+void GraphScene::startAlgo() {
+  algorithm_state = Running;
+  while (!dfs_stack.empty())
+    dfs_stack.pop();
 
-  scene->visited.assign(scene->nodes.size(), false);
+  visited.assign(nodes.size(), false);
 
-  if (!scene->nodes.empty()) {
-    scene->dfs_stack.push(
-        {scene->root_id, GraphScene::DFSPhase::ENTER}); // root
+  if (!nodes.empty()) {
+    dfs_stack.push({root_id, GraphScene::DFSPhase::ENTER}); // root
 
     EventDescriptor e(EventAction::AlgoStateUpdate, EventTarget::Stack);
     dispatchSceneEvent(e);
   }
 }
-void step_algo(GraphScene *scene) {
-  scene->algorithm_state = Stepping;
-  scene->traverse();
 
+void GraphScene::stepAlgo() {
+  algorithm_state = Stepping;
+  traverse();
   EventDescriptor e(EventAction::AlgoStateUpdate, EventTarget::Stack);
   dispatchSceneEvent(e);
 }
 
-void update_mode(GraphScene *ptr, int main, int sub) {
+void GraphScene::resetCameraPos() {
+  Scene::resetCameraPos();
 
-  ptr->main_mode = main;
-  ptr->sub_mode = sub;
-}
-
-GraphScene *get_scene_ptr() { return GraphScene::scene_ptr; }
-
-void on_resize(void) { GraphScene::scene_ptr->update_res = true; }
-const char *get_stack_json() { return GraphScene::scene_ptr->getStackJSON(); }
-const char *get_adj_json() { return GraphScene::scene_ptr->getAdjJSON(); }
-const char *get_node_list_json() {
-  return GraphScene::scene_ptr->getNodeListJSON();
-}
-const char *get_root_node_json() {
-  return GraphScene::scene_ptr->getRootNodeJSON();
-}
-
-void reset_scene() { return GraphScene::scene_ptr->resetScene(); }
-void toggle_keybind_overlay() { GraphScene::scene_ptr->ToggleKeybindOverlay(); }
-void set_root_node(u_int32_t idx) { GraphScene::scene_ptr->setRootNode(idx); }
-void set_node_val(u_int32_t node_id, int value) {
-  GraphScene::scene_ptr->setNodeVal(node_id, value);
-}
-void save_camera_pos() {
-  GraphScene::scene_ptr->camera_old_offset =
-      GraphScene::scene_ptr->g_camera.offset;
-
-  GraphScene::scene_ptr->camera_old_target =
-      GraphScene::scene_ptr->g_camera.target;
-  GraphScene::scene_ptr->camera_old_zoom = GraphScene::scene_ptr->g_camera.zoom;
-}
-void set_camera_pos_to_old_pos() {
-  GraphScene::scene_ptr->g_camera.offset =
-      GraphScene::scene_ptr->camera_old_offset;
-  GraphScene::scene_ptr->g_camera.target =
-      GraphScene::scene_ptr->camera_old_target;
-  GraphScene::scene_ptr->g_camera.zoom = GraphScene::scene_ptr->camera_old_zoom;
-
-  GraphScene::scene_ptr->hoveredNodeIdx = SIZE_MAX;
+  hoveredNodeIdx = SIZE_MAX;
   //gotoPos should check if the camera is already at the old pos and then set moveCamera to false in it;
 }
+void GraphScene::updateMode(int main, int sub) {
 
-void set_hover_state(bool hover, u_int32_t node_id) {
+  main_mode = main;
+  sub_mode = sub;
+}
+
+void GraphScene::setHoverState(bool hover, uint32_t node_id) {
   if (GraphScene::scene_ptr->algorithm_state == Running ||
       GraphScene::scene_ptr->algorithm_state == Stepping) {
     return;
@@ -191,7 +160,9 @@ void GraphScene::draw(IVector2 *resolution) {
   }
 
   EndMode2D();
-  GraphScene::drawUI(*resolution);
+
+  if (m_showUI)
+    GraphScene::drawUI(*resolution);
 
   EndDrawing();
 
@@ -211,7 +182,7 @@ void GraphScene::drawUI(IVector2 resolution) {
   Vector2 mousePos = GetMousePosition();
   char posStr[64];
   char modeStr[32];
-  if (show_key_overlay) {
+  if (m_showUI) {
 
     char keybindStr[256];
 
@@ -804,24 +775,8 @@ bool GraphScene::IsMouseHoveringEdge(const Vector2 &mouse, const Vector2 &p1,
 }
 
 void GraphScene::update(IVector2 *resolution) {
-  if (update_res) {
-
-    // What world point is currently at the center of the OLD canvas?
-    Vector2 old_center_world = GetScreenToWorld2D(
-        {resolution->x * 0.5f, resolution->y * 0.5f}, g_camera);
-
-    double css_w, css_h;
-    emscripten_get_element_css_size("#canvas", &css_w, &css_h);
-    double dpr = emscripten_get_device_pixel_ratio();
-    *resolution = {static_cast<int>(std::ceil(css_w * dpr)),
-                   static_cast<int>(std::ceil(css_h * dpr))};
-    SetWindowSize(resolution->x, resolution->y);
-
-    g_camera.offset = {resolution->x * 0.5f, resolution->y * 0.5f};
-    g_camera.target = old_center_world; // keep that same world point centered
-
-    update_res = false;
-  } // ic> (resetCamOffset) {
+  Scene::update(resolution);
+  // ic> (resetCamOffset) {
   //
   //   resetCamOffset = false;
   // }
@@ -1023,9 +978,6 @@ void GraphScene::gotoPos(IVector2 *resolution) {
       Vector2NearlyEqual(g_camera.offset, camera_old_offset)) {
     moveCamera = false;
   }
-}
-void GraphScene::ToggleKeybindOverlay() {
-  show_key_overlay = !show_key_overlay;
 }
 
 int GraphScene::getCurrentAlgoId() { return std::to_underlying(a_id); }

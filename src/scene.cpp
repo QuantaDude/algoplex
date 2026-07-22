@@ -2,12 +2,15 @@
 
 #include "app.hpp"
 #include "colors.h"
+#include "graph_scene.hpp"
 #include "raylib.h"
+#include <cstdint>
 #include <cstdio>
 
-Scene::Scene() : g_camera({{0}}) {}
+Scene::Scene() : g_camera({{0}}), m_updateRes(false) {}
 
-Scene::Scene(Font *font) : m_font(font), g_camera({{0}}) {}
+Scene::~Scene() {}
+Scene::Scene(Font *font) : m_font(font), g_camera({{0}}), m_showUI(true) {}
 
 void Scene::init() {
 
@@ -28,4 +31,116 @@ void Scene::draw(IVector2 *resolution) {
       25, 2, COLOR_TEXT);
 }
 
-void Scene::update(IVector2 *resolution) {}
+void Scene::update(IVector2 *resolution) {
+  if (m_updateRes) {
+
+    // What world point is currently at the center of the OLD canvas?
+    Vector2 old_center_world = GetScreenToWorld2D(
+        {resolution->x * 0.5f, resolution->y * 0.5f}, g_camera);
+
+    double css_w, css_h;
+    emscripten_get_element_css_size("#canvas", &css_w, &css_h);
+    double dpr = emscripten_get_device_pixel_ratio();
+    *resolution = {static_cast<int>(std::ceil(css_w * dpr)),
+                   static_cast<int>(std::ceil(css_h * dpr))};
+    SetWindowSize(resolution->x, resolution->y);
+
+    g_camera.offset = {resolution->x * 0.5f, resolution->y * 0.5f};
+    g_camera.target = old_center_world; // keep that same world point centered
+
+    m_updateRes = false;
+  }
+}
+
+void Scene::toggleUI() { m_showUI = !m_showUI; }
+
+void Scene::saveCameraPos() {
+
+  camera_old_offset = g_camera.offset;
+
+  camera_old_target = g_camera.target;
+  camera_old_zoom = g_camera.zoom;
+}
+
+int Scene::getCurrentAlgorithmId() { return 1; }
+void Scene::onResize() { m_updateRes = true; }
+
+void Scene::resetCameraPos() {}
+const char *Scene::getStackJSON() {}
+const char *Scene::getAdjJSON() {}
+const char *Scene::getNodeListJSON() {}
+const char *Scene::getRootNodeJSON() {}
+void Scene::setRootNode(uint32_t node_id) {}
+void Scene::setNodeVal(uint32_t node_id, int value) {}
+extern "C" {
+void on_resize(void) { App::instance->current_scene->onResize(); }
+
+void set_root_node(uint32_t idx) {
+
+  App::instance->current_scene->setRootNode(idx);
+}
+
+void set_node_val(uint32_t node_id, int value) {
+  App::instance->current_scene->setNodeVal(node_id, value);
+}
+
+const char *get_stack_json() {
+  return App::instance->current_scene->getStackJSON();
+}
+const char *get_adj_json() {
+  return App::instance->current_scene->getAdjJSON();
+}
+const char *get_node_list_json() {
+  return App::instance->current_scene->getNodeListJSON();
+}
+const char *get_root_node_json() {
+  return App::instance->current_scene->getRootNodeJSON();
+}
+
+void reset_scene() { return App::instance->current_scene->resetScene(); }
+
+void toggle_keybind_overlay() { App::instance->current_scene->toggleUI(); }
+
+void save_camera_pos() { App::instance->current_scene->saveCameraPos(); }
+
+void set_camera_pos_to_old_pos() {
+
+  App::instance->current_scene->resetCameraPos();
+}
+
+void set_hover_state(bool hover, uint32_t node_id) {
+  App::instance->current_scene->setHoverState(hover, node_id);
+}
+void update_mode(int primary, int secondary) {
+  App::instance->current_scene->updateMode(primary, secondary);
+}
+
+void step_algo() { App::instance->current_scene->stepAlgo(); }
+void start_algo() { App::instance->current_scene->startAlgo(); }
+}
+
+EMSCRIPTEN_BINDINGS(scene_bindings) {
+
+  emscripten::class_<Scene>("Scene")
+      .function("resetScene", &Scene::resetScene)
+      .function("onResize", &Scene::onResize)
+      .function("saveCameraPos", &Scene::saveCameraPos)
+      .function("resetCameraPos", &Scene::resetCameraPos)
+      .function("getCurrentAlgorithmId", &Scene::getCurrentAlgorithmId)
+      .function("getStackJSON", &Scene::getStackJSON,
+                emscripten::allow_raw_pointers())
+      .function("getAdjJSON", &Scene::getAdjJSON,
+                emscripten::allow_raw_pointers())
+      .function("getNodeListJSON", &Scene::getNodeListJSON,
+                emscripten::allow_raw_pointers())
+      .function("getRootNodeJSON", &Scene::getRootNodeJSON,
+                emscripten::allow_raw_pointers())
+      .function("startAlgo", &Scene::startAlgo)
+      .function("stepAlgo", &Scene::stepAlgo)
+      .function("resetAlgo", &Scene::resetAlgo)
+      .function("setRootNode", &Scene::setRootNode)
+      .function("setNodeVal", &Scene::setNodeVal)
+      .function("setHoverState", &Scene::setHoverState)
+      .function("toggleUI", &Scene::toggleUI)
+      .function("updateMode", &Scene::updateMode);
+};

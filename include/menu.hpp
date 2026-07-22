@@ -12,4 +12,12 @@ public:
   void update(IVector2 *) override;
   void input() override;
   void DrawUI(IVector2);
+
+  void resetScene() override;
+  void updateMode(int, int) override;
+  void setHoverState(bool, uint32_t) override;
+  void resetCameraPos() override;
+  void startAlgo() override;
+  void stepAlgo() override;
+  void resetAlgo() override;
 };

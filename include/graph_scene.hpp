@@ -28,8 +28,6 @@ public:
   };
 
   RenderTexture2D target;
-  bool update_res = false;
-  bool show_key_overlay = true;
   struct DFSFrame {
     u_int32_t node;
     DFSPhase phase;
@@ -45,10 +43,6 @@ public:
     }
   }
   AlgorithmState algorithm_state;
-  Vector2 camera_old_offset;
-  float camera_old_zoom;
-  Vector2 camera_old_target;
-  Vector2 mouse_world_pos;
 
   // void GuiAlgoViz(BaseGuiState *state);
 
@@ -114,47 +108,26 @@ public:
   void dfs();
   void createStack();
 
-  void resetScene();
+  void resetScene() override;
   //updates the camera position when the mouse is hovring over an UI element
   void gotoNode(IVector2 *resolution);
   void gotoPos(IVector2 *resolution);
+  void resetCameraPos() override;
   int getCurrentAlgoId();
 
-  void ToggleKeybindOverlay();
-  void setRootNode(u_int32_t);
-  void setNodeVal(u_int32_t, int);
+  void updateMode(int, int) override;
+  void setRootNode(uint32_t) override;
+  void setNodeVal(uint32_t, int) override;
+  void setHoverState(bool, uint32_t) override;
 
-  const char *getStackJSON();
-  const char *getAdjJSON();
-  const char *getNodeListJSON();
-  const char *getRootNodeJSON();
+  void startAlgo() override;
+  void stepAlgo() override;
+  void resetAlgo() override;
+  const char *getStackJSON() override;
+  const char *getAdjJSON() override;
+  const char *getNodeListJSON() override;
+  const char *getRootNodeJSON() override;
 
   void traverse();
   static GraphScene *scene_ptr;
 };
-
-#ifdef PLATFORM_WEB
-
-extern "C" {
-GraphScene *EMSCRIPTEN_KEEPALIVE get_scene_ptr();
-void EMSCRIPTEN_KEEPALIVE reset_scene();
-void EMSCRIPTEN_KEEPALIVE toggle_keybind_overlay();
-void EMSCRIPTEN_KEEPALIVE update_mode(GraphScene *, int, int);
-void EMSCRIPTEN_KEEPALIVE on_resize();
-void EMSCRIPTEN_KEEPALIVE set_root_node(u_int32_t);
-void EMSCRIPTEN_KEEPALIVE set_node_val(u_int32_t, int);
-void EMSCRIPTEN_KEEPALIVE set_hover_state(bool, u_int32_t);
-void EMSCRIPTEN_KEEPALIVE save_camera_pos();
-void EMSCRIPTEN_KEEPALIVE set_camera_pos_to_old_pos();
-
-const char *EMSCRIPTEN_KEEPALIVE get_stack_json();
-const char *EMSCRIPTEN_KEEPALIVE get_adj_json();
-const char *EMSCRIPTEN_KEEPALIVE get_node_list_json();
-const char *EMSCRIPTEN_KEEPALIVE get_root_node_json();
-
-int get_current_algorithm_id();
-void start_algo(GraphScene *);
-void step_algo(GraphScene *);
-}
-
-#endif // PLATFORM_WEB
