@@ -2,6 +2,7 @@
 #include "menu.hpp"
 #include "raylib.h"
 #include "scene.hpp"
+#include "scene_registry.hpp"
 #include "utils.h"
 #include <cstddef>
 #include <cstdint>
@@ -127,6 +128,32 @@ void App::m_Shutdown() {
 
 void App::m_RunWrapper() { App::instance->m_Run(); }
 
+void App::m_LoadAlgorithm(int algorithm_id) {
+
+  const AlgorithmInfo &info = ALGORITHMS[static_cast<int>(algorithm_id)];
+  if (current_scene != nullptr) {
+    //current_scene->m_unload();
+    current_scene->Scene::~Scene();
+  }
+  arena_reset(&m_arena);
+
+  switch (info.category) {
+  case SceneType::Graph:
+
+    current_scene = arena_create<GraphScene>(&m_arena, &m_font);
+    current_scene->init();
+    break;
+
+  case SceneType::Sort:
+
+    break;
+
+  default:
+
+    break;
+  }
+}
+
 #if defined(PLATFORM_WEB)
 // void App::initWeb() {
 //
@@ -162,5 +189,9 @@ extern "C" void notify_algorithms() {
 
 extern "C" void set_receive_inputs(bool mouseHover) {
   App::m_GetInstance().m_mouse_hovering = mouseHover;
+}
+
+extern "C" void set_algorithm(int algorithm_id) {
+  App::m_GetInstance().m_LoadAlgorithm(algorithm_id);
 }
 #endif

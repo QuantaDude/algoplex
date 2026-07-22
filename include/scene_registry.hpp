@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <format>
+#include <stdint.h>
 #include <sys/types.h>
 enum class SceneType {
   Graph, // Graph & Tree
@@ -8,9 +9,12 @@ enum class SceneType {
 };
 
 enum class AlgorithmId {
+  //Graph algos
   DFS,
   DFS_A,
   BFS,
+
+  //sorting alsogs
   Bubble,
 
   ALGORITHM_COUNT,

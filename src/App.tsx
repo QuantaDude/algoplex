@@ -116,7 +116,7 @@ function App() {
   return (
     <>
       <Navbar ref={navbarRef} wasmModule={moduleRef!} />
-      <AlgoMenuPanel ref={algoMenuPanelRef} />
+      <AlgoMenuPanel ref={algoMenuPanelRef} wasmModule={moduleRef} />
       <canvas
         id="canvas"
         ref={canvasRef}
@@ -125,7 +125,7 @@ function App() {
         onMouseEnter={() => moduleRef.current?._set_receive_inputs(true)}
         onMouseLeave={() => moduleRef.current?._set_receive_inputs(false)}
       />
-          {refsReady && showTooltip && (
+      {refsReady && showTooltip && (
         <Tooltip
           pages={tooltipPages}
           onClose={() => {

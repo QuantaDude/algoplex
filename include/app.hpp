@@ -24,6 +24,7 @@ struct App {
   void m_LoadScene();
   void m_Run();
   void m_Shutdown();
+  void m_LoadAlgorithm(int);
 
   static void m_RunWrapper();
   static App &m_GetInstance();
@@ -39,3 +40,4 @@ void initApp(App *app, IVector2 resolution, const char *font = "");
 
 extern "C" void set_receive_inputs(bool);
 extern "C" void notify_algorithms();
+extern "C" void set_algorithm(int algorithm_id);

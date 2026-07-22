@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState, type ReactNode, type Ref } from "react";
+import { useEffect, useMemo, useState, type ReactNode, type Ref, type RefObject } from "react";
 import { SceneTypeLabel } from "../../types/scene_registry";
+import type { WasmModule } from "../../types/wasmmodule";
 
 export interface AlgoDescriptor {
   id: string;
@@ -13,7 +14,7 @@ const SCENE_TYPE: Record<string, string> = {
   "1": "Sort",
 };
 
-export default function AlgoMenuPanel({ ref }: { ref: Ref<HTMLElement> }) {
+export default function AlgoMenuPanel({ ref, wasmModule }: { ref: Ref<HTMLElement>, wasmModule: RefObject<WasmModule> }) {
   const [algorithms, setAlgorithms] = useState<AlgoDescriptor[]>([]);
   const [groupVisible, setGroupVisibility] = useState<Record<string, boolean>>(
     {},
@@ -71,7 +72,7 @@ export default function AlgoMenuPanel({ ref }: { ref: Ref<HTMLElement> }) {
                 >
                   {algos.map((algo) => (
                     <li key={algo.id}>
-                      <button className="dropdown-li-btn" onClick={() => {}}>
+                      <button className="dropdown-li-btn" onClick={() => { wasmModule.current._set_algorithm(algo.id); }}>
                         {algo.name}
                       </button>
                     </li>

@@ -1,5 +1,6 @@
 #pragma once
 #include "raylib.h"
+#include "scene_registry.hpp"
 #include "utils.hpp"
 #include <cstdint>
 #import <emscripten.h>
@@ -24,6 +25,8 @@ class Scene {
   AppState state;
 
 public:
+  SceneType m_SceneType;
+  RenderTexture2D target;
   Font *m_font;
   Camera2D g_camera;
   bool m_updateRes = false;

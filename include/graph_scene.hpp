@@ -27,9 +27,8 @@ public:
     EXIT
   };
 
-  RenderTexture2D target;
   struct DFSFrame {
-    u_int32_t node;
+    uint32_t node;
     DFSPhase phase;
   };
   inline const char *dfsPhaseToString(DFSPhase phase) {
@@ -66,7 +65,7 @@ public:
   };
 
   struct Node {
-    u_int32_t id;
+    uint32_t id;
 
     Vector2 pos;
     Vector2 oldPos;
@@ -78,8 +77,8 @@ public:
   };
 
   // Node *root;
-  u_int32_t root_id;
-  std::unordered_map<u_int32_t, size_t> id_to_node_idx;
+  uint32_t root_id;
+  std::unordered_map<uint32_t, size_t> id_to_node_idx;
   std::vector<Node> nodes;
   std::vector<Edge> edges;
 

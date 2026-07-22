@@ -4,13 +4,17 @@
 #include "colors.h"
 #include "graph_scene.hpp"
 #include "raylib.h"
+#include "scene_registry.hpp"
 #include <cstdint>
 #include <cstdio>
 
-Scene::Scene() : g_camera({{0}}), m_updateRes(false) {}
+Scene::Scene()
+    : m_SceneType(SceneType::Graph), g_camera({{0}}), m_updateRes(false) {}
 
 Scene::~Scene() {}
-Scene::Scene(Font *font) : m_font(font), g_camera({{0}}), m_showUI(true) {}
+Scene::Scene(Font *font)
+    : m_SceneType(SceneType::Graph), m_font(font), g_camera({{0}}),
+      m_showUI(true) {}
 
 void Scene::init() {
 
@@ -18,6 +22,8 @@ void Scene::init() {
   g_camera.target = {0, 0};
   g_camera.offset = {resolution->x * 0.5f, resolution->y * 0.5f};
   g_camera.zoom = 1.5f;
+
+  m_SceneType = SceneType::Graph;
 }
 
 void Scene::draw(IVector2 *resolution) {
