@@ -12,24 +12,24 @@ await dfs(graph, graph.root_id, visited)
 """
 
 
-async def main(graph):
+def main(graph):
     visited = set()
-    await dfs(graph, graph.root_id, visited)
+    dfs(graph, graph.root_id, visited)
 
 
-async def dfs(graph, node_id, visited):
+def dfs(graph, node_id, visited):
     if node_id in visited:
         return
     visited.add(node_id)
 
-    await graph.stack.push(node_id)
-    await graph.set_current(node_id)
-    await graph.mark_visited(node_id)
+    graph.stack.push(node_id)
+    graph.set_current(node_id)
+    graph.mark_visited(node_id)
 
     print(f"visit {node_id}")
 
     for neighbor_id in graph.neighbors(node_id):
         if neighbor_id not in visited:
-            await dfs(graph, neighbor_id, visited)
+            dfs(graph, neighbor_id, visited)
 
-    await graph.stack.pop()
+    graph.stack.pop()

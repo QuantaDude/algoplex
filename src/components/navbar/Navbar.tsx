@@ -35,7 +35,6 @@ export default function Navbar({
             type="button"
             disabled={status === "running"}
             onClick={onStep}
-            title="Execute the next hidden-API call, then pause"
           >
             Step
           </button>

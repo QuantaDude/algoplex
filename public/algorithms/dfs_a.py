@@ -5,7 +5,7 @@
 ENTER, EXIT = "enter", "exit"
 
 
-async def main(graph):
+def main(graph):
     visited = set()
     # Each stack frame is (node_id, phase). We store just the node id in the
     # visual stack (graph.stack.push takes a node id), and track phase
@@ -22,16 +22,16 @@ async def main(graph):
                 continue
             visited.add(node_id)
 
-            await graph.stack.push(node_id)
-            await graph.set_current(node_id)
-            await graph.mark_visited(node_id)
+            graph.stack.push(node_id)
+            graph.set_current(node_id)
+            graph.mark_visited(node_id)
             print(f"enter {node_id}")
 
             work.append((node_id, EXIT))
             for neighbor_id in reversed(graph.neighbors(node_id)):
                 if neighbor_id not in visited:
-                    await graph.mark_discovered(neighbor_id)
+                    graph.mark_discovered(neighbor_id)
                     work.append((neighbor_id, ENTER))
         else:
-            await graph.stack.pop()
+            graph.stack.pop()
             print(f"exit {node_id}")

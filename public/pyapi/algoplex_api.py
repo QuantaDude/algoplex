@@ -34,6 +34,8 @@ Design rules that make single-stepping possible
    these wrapper objects. That's the "hidden API" boundary.
 """
 
+import ast
+import inspect
 import json
 
 
@@ -236,3 +238,122 @@ def _make_graph(bridge):
 
 def _make_bars(bridge):
     return Bars(bridge)
+
+
+class Asyncifier(ast.NodeTransformer):
+    def __init__(
+        self,
+        entry_param: str | None,
+        api_method_names: set[str],
+        api_free_fns: set[str],
+    ):
+        self.api_rooted = {entry_param} if entry_param else set()
+        self.api_method_names = api_method_names
+        self.api_free_fns = api_free_fns
+        self.user_fn_names: set[str] = set()
+
+    def transform(self, source: str) -> str:
+        tree = ast.parse(source)
+        self.user_fn_names = {
+            n.name
+            for n in ast.walk(tree)
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+        }
+        new_tree = self.visit(tree)
+        ast.fix_missing_locations(new_tree)
+        return ast.unparse(new_tree)
+
+    @staticmethod
+    def _root_name(expr):
+        while isinstance(expr, ast.Attribute):
+            expr = expr.value
+        return expr.id if isinstance(expr, ast.Name) else None
+
+    def visit_Assign(self, node):
+        # track simple aliases: `s = graph.stack`, `q = graph.queue`
+        if isinstance(node.value, (ast.Name, ast.Attribute)):
+            root = self._root_name(node.value)
+            if root in self.api_rooted:
+                for t in node.targets:
+                    if isinstance(t, ast.Name):
+                        self.api_rooted.add(t.id)
+        self.generic_visit(node)
+        return node
+
+    def visit_FunctionDef(self, node):
+        self.generic_visit(node)
+        new_node = ast.AsyncFunctionDef(
+            name=node.name,
+            args=node.args,
+            body=node.body,
+            decorator_list=node.decorator_list,
+            returns=node.returns,
+            type_comment=getattr(node, "type_comment", None),
+        )
+        return ast.copy_location(new_node, node)
+
+    def visit_Await(self, node):
+        inner = node.value
+        if isinstance(inner, ast.Call):
+            node.value = ast.copy_location(
+                ast.Call(
+                    func=self.visit(inner.func),
+                    args=[self.visit(a) for a in inner.args],
+                    keywords=[self.visit(k) for k in inner.keywords],
+                ),
+                inner,
+            )
+        else:
+            node.value = self.visit(inner)
+        return node
+
+    def visit_Call(self, node):
+        self.generic_visit(node)
+        if self._needs_await(node.func):
+            return ast.copy_location(ast.Await(value=node), node)
+        return node
+
+    def _needs_await(self, func) -> bool:
+        if isinstance(func, ast.Name):
+            return func.id in self.user_fn_names or func.id in self.api_free_fns
+        if isinstance(func, ast.Attribute):
+            if func.attr not in self.api_method_names:
+                return False
+            return self._root_name(func.value) in self.api_rooted
+        return False
+
+
+def _find_entry_param(tree) -> str | None:
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name == "main"
+        ):
+            args = node.args.args
+            if args:
+                return args[0].arg
+    return None
+
+
+def _coroutine_method_names(*classes) -> set[str]:
+    return {
+        name
+        for cls in classes
+        for name, member in inspect.getmembers(
+            cls, predicate=inspect.iscoroutinefunction
+        )
+        if not name.startswith("_")
+    }
+
+
+_API_METHOD_NAMES = _coroutine_method_names(Graph, Bars, Stack, Queue)
+_API_FREE_FUNCTIONS: set[str] = set()
+# no bare async functions in this API currently
+
+
+def _algoplex_asyncify(source: str) -> str:
+    tree = ast.parse(source)
+    entry_param = _find_entry_param(tree)
+    return Asyncifier(entry_param, _API_METHOD_NAMES, _API_FREE_FUNCTIONS).transform(
+        source
+    )

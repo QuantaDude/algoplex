@@ -179,7 +179,12 @@ export function usePyRunner(moduleRef: RefObject<MainModule | null>) {
         const entryArg = (makeEntryArg as (b: unknown) => { destroy?: () => void })(bridge);
 
         try {
-          await pyodide.runPythonAsync(code);
+          const asyncify = pyodide.globals.get("_algoplex_asyncify") as
+            ((src: string) => string) | undefined;
+          const preparedCode = asyncify ? asyncify(code) : code;
+
+          await pyodide.runPythonAsync(preparedCode);
+          // await pyodide.runPythonAsync(code);
           if (myToken !== runTokenRef.current) return;
 
           const mainFn = pyodide.globals.get("main");
